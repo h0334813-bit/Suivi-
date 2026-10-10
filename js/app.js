@@ -359,7 +359,7 @@ function openModal({ title, fields, values, onSave, onDelete, extra = '' }) {
   root.innerHTML = `<div class="overlay" data-act="closemodal"><form class="modal" novalidate><h2>${title}</h2><div class="fields">${fields.map(f => fieldHTML(f, values[f.k])).join('')}</div>${extra}
     <div class="m-act">${onDelete ? '<button type="button" class="btn danger" id="m-del">Supprimer</button>' : ''}<span></span><button type="button" class="btn" data-act="closemodal">Annuler</button><button class="btn pri" type="submit">Enregistrer</button></div></form></div>`;
   const form = $('.modal', root);
-  form.addEventListener('click', e => { e.stopPropagation(); const b = e.target.closest('[data-color]'); if (b) { $$('[data-color]', form).forEach(x => x.classList.toggle('on', x === b)); b.parentElement.dataset.v = b.dataset.color; } if (e.target.closest('[data-act="closemodal"]')) closeModal(); });
+  form.addEventListener('click', e => { const b = e.target.closest('[data-color]'); if (b) { $$('[data-color]', form).forEach(x => x.classList.toggle('on', x === b)); b.parentElement.dataset.v = b.dataset.color; } });
   form.addEventListener('submit', e => {
     e.preventDefault(); const out = {};
     for (const f of fields) {
@@ -425,7 +425,7 @@ const ACT = {
   toggle: (el, ev) => { ev.stopPropagation(); toggleCheck(el.dataset.key, ev); },
   edit: el => openEntity(el.dataset.kind, el.dataset.id),
   new: el => openEntity(el.dataset.kind, null, el.dataset.date ? { date: el.dataset.date } : {}),
-  closemodal: () => closeModal(),
+  closemodal: (el, e) => { if (el.classList.contains('overlay') && e.target !== el) return; closeModal(); },
   settings: () => openSettings(),
   theme: () => { Store.commit(s => { s.settings.theme = s.settings.theme === 'dark' ? 'light' : 'dark'; }); applyTheme(); render(); },
   goproj: el => { App.projFilter = 'open'; App.openProj = el.dataset.id; go('projects'); setTimeout(() => $('#proj-' + el.dataset.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60); },
