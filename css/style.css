@@ -257,3 +257,13 @@ button.chip { cursor: pointer; }
   .exam { flex-direction: column; } .gridwrap { grid-template-columns: 36px repeat(6, 100px); } .tl { margin-left: 50px; } .hr span { left: -46px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+/* Import .ics */
+.modal.wide { width: min(780px, 100%); }
+.ics-intro { margin-bottom: 10px; color: var(--mut); } .ics-intro b { color: var(--tx); }
+.ics-list { display: grid; gap: 6px; max-height: 46vh; overflow: auto; padding-right: 4px; margin-bottom: 12px; }
+.ics-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 12px; background: var(--trk); }
+.ics-t { flex: 1; min-width: 0; } .ics-t b, .ics-t small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ics-row select { padding: 7px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg2); }
+.ics-opt { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; font-weight: 600; }
+@media (max-width: 800px) { .ics-row { flex-direction: column; align-items: stretch; } }
