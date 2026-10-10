@@ -533,3 +533,24 @@ render(true);
 window.addEventListener('hashchange', () => { const v = location.hash.slice(1); if (VIEWS[v] && v !== App.view) go(v); });
 setInterval(pomoTick, 500);
 setInterval(() => { positionNow(); if (App.view === 'dash' && !$('.modal') && !document.activeElement?.closest('input,select,textarea')) render(); }, 60000);
+
+/* ---------- Mise à jour automatique : recharge le site quand une nouvelle version est déployée ---------- */
+const APP_V = document.querySelector('meta[name=app-version]')?.content || '';
+async function checkUpdate() {
+  if (!APP_V || APP_V.startsWith('__')) return; // version locale (non déployée)
+  try {
+    const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return;
+    const { v } = await r.json(); if (!v || v === APP_V) return;
+    let seen = ''; try { seen = sessionStorage.getItem('upd') || ''; } catch { /* ignoré */ }
+    if (seen === v) return; // déjà tenté : évite toute boucle
+    if ($('.modal') || Pomo.running || document.activeElement?.closest('input,textarea,select')) {
+      if (!App.updToast) { App.updToast = 1; toast('Nouvelle version disponible : elle s’installera dès que tu as fini', '🔄'); }
+      return;
+    }
+    try { sessionStorage.setItem('upd', v); } catch { /* ignoré */ }
+    toast('Mise à jour du site…', '🔄');
+    setTimeout(() => location.replace(location.pathname + '?v=' + v + location.hash), 1200);
+  } catch { /* hors ligne */ }
+}
+setTimeout(checkUpdate, 2500); setInterval(checkUpdate, 5 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpdate(); });
