@@ -177,7 +177,7 @@ function vCourses() {
   }).join('');
   const hours = Array.from({ length: h1 - h0 }, (_, i) => `<div style="top:${i * 52}px">${pad(h0 + i)}h</div>`).join('');
   const totalEcts = S.courses.reduce((a, c) => a + (+c.ects || 0), 0);
-  return `${head('Cours', `${S.courses.length} matières · ${totalEcts} ECTS`, `<button class="btn pri" data-act="new" data-kind="course">＋ Nouveau cours</button>`)}
+  return `${head('Cours', `${S.courses.length} matières · ${totalEcts} ECTS`, `<button class="btn" data-act="icsimport">📅 Importer un .ics</button><button class="btn pri" data-act="new" data-kind="course">＋ Nouveau cours</button>`)}
   <div class="card gridwrap"><div class="ghours" style="height:${H}px;margin-top:34px">${hours}</div>${cols}</div>
   <div class="cards3">${S.courses.map(c => `<div class="card course" style="--c:${c.color}" data-act="edit" data-kind="course" data-id="${c.id}"><i></i><div><h3>${esc(c.name)}</h3><p>${DAYS[c.day]} · ${c.start}–${c.end}</p><small>${esc([c.room, c.teacher].filter(Boolean).join(' · '))}</small></div>${chip(c.ects + ' ECTS')}</div>`).join('') || empty('📚', 'Ajoute tes cours pour remplir ton emploi du temps.')}</div>`;
 }
@@ -354,9 +354,9 @@ function fieldHTML(f, v) {
   if (f.t === 'color') return `<div class="fld wide"><span>${f.l}</span><div class="swatches" id="${id}" data-v="${val}">${COLORS.map(c => `<button type="button" class="${c === val ? 'on' : ''}" style="background:${c}" data-color="${c}" aria-label="${c}"></button>`).join('')}</div></div>`;
   return `<label class="fld"><span>${f.l}</span><input id="${id}" type="${f.t}" value="${esc(val)}" ${f.min != null ? `min="${f.min}"` : ''} ${f.max != null ? `max="${f.max}"` : ''} ${f.step ? `step="${f.step}"` : ''} ${f.req ? 'required' : ''}></label>`;
 }
-function openModal({ title, fields, values, onSave, onDelete, extra = '' }) {
+function openModal({ title, fields, values, onSave, onDelete, extra = '', wide = false }) {
   const root = $('#modal-root');
-  root.innerHTML = `<div class="overlay" data-act="closemodal"><form class="modal" novalidate><h2>${title}</h2><div class="fields">${fields.map(f => fieldHTML(f, values[f.k])).join('')}</div>${extra}
+  root.innerHTML = `<div class="overlay" data-act="closemodal"><form class="modal${wide ? ' wide' : ''}" novalidate><h2>${title}</h2><div class="fields">${fields.map(f => fieldHTML(f, values[f.k])).join('')}</div>${extra}
     <div class="m-act">${onDelete ? '<button type="button" class="btn danger" id="m-del">Supprimer</button>' : ''}<span></span><button type="button" class="btn" data-act="closemodal">Annuler</button><button class="btn pri" type="submit">Enregistrer</button></div></form></div>`;
   const form = $('.modal', root);
   form.addEventListener('click', e => { const b = e.target.closest('[data-color]'); if (b) { $$('[data-color]', form).forEach(x => x.classList.toggle('on', x === b)); b.parentElement.dataset.v = b.dataset.color; } });
@@ -398,7 +398,7 @@ function openSettings() {
   const s = Store.state.settings;
   openModal({
     title: 'Réglages', fields: [{ k: 'name', l: 'Ton prénom', t: 'text' }, { k: 'goal', l: 'Objectif de moyenne /20', t: 'number', min: 0, max: 20, step: .5 }, { k: 'accent', l: 'Couleur d’accent', t: 'color' }], values: s,
-    extra: `<div class="data-act"><small>Données (stockées dans ce navigateur)</small><div><button type="button" class="btn sm" data-act="export">⬇ Exporter</button><button type="button" class="btn sm" data-act="import">⬆ Importer</button><button type="button" class="btn sm" data-act="demo">Démo</button><button type="button" class="btn sm danger" data-act="wipe">Tout effacer</button></div></div>`,
+    extra: `<div class="data-act"><small>Données (stockées dans ce navigateur)</small><div><button type="button" class="btn sm" data-act="icsimport">📅 Importer .ics</button><button type="button" class="btn sm" data-act="export">⬇ Exporter</button><button type="button" class="btn sm" data-act="import">⬆ Importer</button><button type="button" class="btn sm" data-act="demo">Démo</button><button type="button" class="btn sm danger" data-act="wipe">Tout effacer</button></div></div>`,
     onSave: v => { Store.commit(st => Object.assign(st.settings, v)); applyTheme(); render(); toast('Réglages enregistrés', '⚙️'); },
   });
 }
