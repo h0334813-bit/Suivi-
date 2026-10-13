@@ -171,7 +171,7 @@ const PHI={0.5:.6915,1:.8413,1.5:.9332,2:.9772};
 const sumF=(f,lo,k)=>{let s=0;for(let i=lo;i<=k;i++)s+=f(i);return Math.min(1,s);};
 function simpson(f,a,b,n=400){if(b<=a)return 0;const h=(b-a)/n;let s=f(a)+f(b);for(let i=1;i<n;i++)s+=f(a+i*h)*(i%2?4:2);return s*h/3;}
 
-/* ======================= CONTENU : les 10 lois ======================= */
+/* ======================= CONTENU : les 11 lois ======================= */
 const LAWS=[
 {id:'bernoulli',name:'Bernoulli',tag:'discrète',reco:'Un seul essai, oui ou non',
  idea:`Une seule expérience, deux issues : succès (1) avec la probabilité p, échec (0) sinon. C'est la brique de base de presque toutes les autres lois de comptage.`,
@@ -240,6 +240,30 @@ const LAWS=[
   {q:`On observe un nombre de sinistres de moyenne 4 et de variance 12. La loi de Poisson convient-elle ?`,o:['Oui','Non : la variance dépasse la moyenne (surdispersion)','Non : la variance est inférieure à la moyenne','Oui, car 12 est un multiple de 4'],c:1,e:`Une Poisson impose Var = E. Ici Var > E : on cherchera plutôt une binomiale négative.`},
   {q:`Il y a en moyenne 2 sinistres par an. Quelle loi décrit le nombre de sinistres sur 6 mois ?`,o:['Poisson(1)','Poisson(2)','Poisson(4)','Poisson(0,5)'],c:0,e:`Le taux est proportionnel à la durée : 2 × 0,5 = 1.`},
   {q:`Deux portefeuilles indépendants ont des sinistres Poisson(2) et Poisson(3). Que dire du total ?`,o:['Poisson(5)','Poisson(6)','Poisson(2,5)','Une loi normale exacte'],c:0,e:`La somme de Poisson indépendantes est une Poisson dont les paramètres s'additionnent.`}
+ ]},
+
+{id:'binegative',name:'Binomiale négative',tag:'discrète',reco:'Comptage avec variance > moyenne',
+ idea:`Elle compte les échecs avant d'obtenir le r-ième succès. En actuariat, on l'utilise surtout comme une Poisson plus souple : même type de comptage, mais avec une variance supérieure à la moyenne (surdispersion).`,
+ ex:`Les assurés n'ont pas tous le même risque : certains sinistrent souvent, d'autres presque jamais. Si la fréquence λ varie selon une loi Gamma et que, à λ fixé, le nombre de sinistres est Poisson, alors le nombre de sinistres d'un assuré pris au hasard est binomial négatif.`,
+ formulas:`X ~ BN(r, p)   X = nombre d'échecs avant le r-ième succès   k = 0, 1, 2…\nP(X=k) = C(k+r−1, k) · p^r · (1−p)^k\nE[X]   = r(1−p)/p\nVar(X) = r(1−p)/p²   donc Var/E = 1/p > 1`,
+ eS:'r(1−p)/p',vS:'r(1−p)/p²',use:'Fréquence des sinistres avec surdispersion (mélange Poisson-Gamma)',
+ tips:[`Test de reconnaissance : variance > moyenne. Poisson (Var = E) ne convient plus, la binomiale négative prend le relais.`,`Le rapport Var/E vaut 1/p. Plus p est petit, plus la surdispersion est forte.`,`Somme de r géométriques indépendantes (qui comptent les échecs) = BN(r, p). Avec r = 1, on retrouve la géométrique.`,`Si r devient très grand avec la moyenne fixée, la loi se rapproche d'une Poisson.`],
+ trap:`Plusieurs conventions coexistent : certains livres comptent les essais jusqu'au r-ième succès (support r, r+1…), d'autres les échecs (support 0, 1…), et certains paramètrent par (r, moyenne). Ici X compte les échecs : vérifie toujours la définition de l'énoncé.`,
+ kind:'d',params:[{k:'r',l:'r (nombre de succès visés)',min:.5,max:20,step:.5,v:3},{k:'p',l:'p (probabilité de succès)',min:.05,max:.95,step:.01,v:.4}],
+ range:p=>[0,Math.min(80,Math.ceil(p.r*(1-p.p)/p.p+5*Math.sqrt(p.r*(1-p.p))/p.p+3))],
+ f:(p,k)=>k<0?0:Math.exp(lg(k+p.r)-lg(k+1)-lg(p.r)+p.r*Math.log(p.p)+k*Math.log(1-p.p)),F:null,
+ mean:p=>p.r*(1-p.p)/p.p,vr:p=>p.r*(1-p.p)/(p.p*p.p),
+ gen:[
+  ()=>{const r=rnd([2,3]),p=rnd([.4,.5,.6]),k=ri(0,3),a=comb(k+r-1,k)*Math.pow(p,r)*Math.pow(1-p,k);return{q:`Le nombre de sinistres suit une loi binomiale négative de paramètres <b>r = ${r}</b> et <b>p = ${fr(p)}</b> (nombre d'échecs avant le r-ième succès). Calcule <b>P(X = ${k})</b>.`,a,hint:'P(X=k) = C(k+r−1, k) · p^r · (1−p)^k',sol:`P(X=${k}) = C(${k+r-1},${k}) × ${fr(p)}^${r} × ${fr(1-p)}^${k} = ${fr(comb(k+r-1,k))} × ${fr(Math.pow(p,r),4)} × ${fr(Math.pow(1-p,k),4)} = ${fr(a,4)}.`};},
+  ()=>{const r=rnd([2,3,5]),p=rnd([.25,.4,.5,.8]);return{q:`X suit une loi binomiale négative de paramètres <b>r = ${r}</b> et <b>p = ${fr(p)}</b> (nombre d'échecs). Calcule <b>E[X]</b>.`,a:r*(1-p)/p,hint:'E[X] = r(1−p)/p',sol:`E[X] = ${r} × ${fr(1-p)} / ${fr(p)} = ${fr(r*(1-p)/p)}.`};},
+  ()=>{const r=rnd([2,3,5]),p=rnd([.25,.4,.5,.8]);return{q:`X suit une loi binomiale négative de paramètres <b>r = ${r}</b> et <b>p = ${fr(p)}</b> (nombre d'échecs). Calcule <b>Var(X)</b>.`,a:r*(1-p)/(p*p),hint:'Var(X) = r(1−p)/p²',sol:`Var(X) = ${r} × ${fr(1-p)} / ${fr(p)}² = ${fr(r*(1-p))} / ${fr(p*p,4)} = ${fr(r*(1-p)/(p*p))}.`};},
+  ()=>{const r=rnd([2,3,5]),p=rnd([.4,.5,.8]),m=r*(1-p)/p,v=m/p;return{q:`Un nombre de sinistres a pour moyenne <b>${fr(m,3)}</b> et pour variance <b>${fr(v,3)}</b>. On le modélise par une binomiale négative. Quelle est la valeur de <b>p</b> ?`,a:p,hint:'Var/E = 1/p',sol:`Var/E = ${fr(v,3)}/${fr(m,3)} = ${fr(v/m,3)} = 1/p, donc p = ${fr(p)}.`};}
+ ],
+ qcm:[
+  {q:`Un nombre de sinistres a pour moyenne 4 et pour variance 12. Quelle loi choisir ?`,o:['Poisson','Binomiale','Binomiale négative','Géométrique'],c:2,e:`Var > E : surdispersion. La Poisson impose Var = E et la binomiale impose Var < E.`},
+  {q:`X ~ BN(r = 3 ; p = 0,5), nombre d'échecs avant le 3ᵉ succès. Que vaut E[X] ?`,o:['3','6','1,5','0,5'],c:0,e:`E = r(1−p)/p = 3 × 0,5 / 0,5 = 3.`},
+  {q:`La binomiale négative avec r = 1 est…`,o:[`la loi géométrique (nombre d'échecs avant le 1er succès)`,'la loi de Poisson','la loi binomiale','la loi exponentielle'],c:0,e:`Attendre un seul succès : on retrouve la géométrique.`},
+  {q:`Pourquoi la binomiale négative est-elle utile en assurance ?`,o:[`Elle modélise un nombre de sinistres quand le risque varie d'un assuré à l'autre (mélange Poisson-Gamma), donc Var > E`,'Elle modélise le montant d\'un sinistre','Elle impose une variance égale à la moyenne','Elle ne sert que pour des événements rarissimes'],c:0,e:`Un mélange Poisson-Gamma produit une binomiale négative, avec plus de variabilité qu'une Poisson.`}
  ]},
 
 {id:'geometrique',name:'Géométrique',tag:'discrète',reco:'Nombre d\'essais jusqu\'au 1er succès',
@@ -405,11 +429,13 @@ const LAWS=[
  ]}
 ];
 /* fonctions de répartition par sommation ou intégration */
-LAWS[1].F=(p,k)=>k<0?0:sumF(j=>LAWS[1].f(p,j),0,Math.min(p.n,Math.floor(k)));
-LAWS[2].F=(p,k)=>k<0?0:sumF(j=>LAWS[2].f(p,j),0,Math.floor(k));
-LAWS[7].F=(p,x)=>x<=0?0:Math.min(1,simpson(t=>LAWS[7].f(p,t),0,x,300));
-const TITLES={bernoulli:'Loi de Bernoulli',binomiale:'Loi binomiale',poisson:'Loi de Poisson',geometrique:'Loi géométrique',uniforme:'Loi uniforme',exponentielle:'Loi exponentielle',normale:'Loi normale',gamma:'Loi Gamma',lognormale:'Loi lognormale',pareto:'Loi de Pareto'};
+const TITLES={binegative:'Loi binomiale négative',bernoulli:'Loi de Bernoulli',binomiale:'Loi binomiale',poisson:'Loi de Poisson',geometrique:'Loi géométrique',uniforme:'Loi uniforme',exponentielle:'Loi exponentielle',normale:'Loi normale',gamma:'Loi Gamma',lognormale:'Loi lognormale',pareto:'Loi de Pareto'};
 const byId=id=>LAWS.find(l=>l.id===id);
+{const B=byId('binomiale'),P=byId('poisson'),N=byId('binegative'),G=byId('gamma');
+B.F=(p,k)=>k<0?0:sumF(j=>B.f(p,j),0,Math.min(p.n,Math.floor(k)));
+P.F=(p,k)=>k<0?0:sumF(j=>P.f(p,j),0,Math.floor(k));
+N.F=(p,k)=>k<0?0:sumF(j=>N.f(p,j),0,Math.floor(k));
+G.F=(p,x)=>x<=0?0:Math.min(1,simpson(t=>G.f(p,t),0,x,300));}
 
 /* ======================= PROGRESSION ======================= */
 const KEY='atelier-lois-v1';
@@ -509,10 +535,10 @@ function railHTML(){
 }
 function homeHTML(){
   const next=LAWS.find(l=>!mastered(l.id)),acc=D.tot?Math.round(D.ok/D.tot*100):0,ov=overall();
-  let h=`<div class="hero"><span class="eyebrow">Lois de probabilité pour l'actuariat</span><h1>Maîtrise les 10 lois de l'actuaire</h1><p>Pour chaque loi : une leçon courte avec un exemple d'assurance, un laboratoire à curseurs, un quiz et des exercices chiffrés corrigés. Une loi est maîtrisée quand tu réussis <b>7 des 8</b> dernières réponses.</p></div>`;
-  h+=`<div class="panel stack"><div class="dash"><div class="stat"><b>${nMastered()}/10</b><span>lois maîtrisées</span></div><div class="stat"><b>${ov} %</b><span>maîtrise globale</span></div><div class="stat"><b>${D.tot}</b><span>réponses données</span></div><div class="stat"><b>${acc} %</b><span>de réussite</span></div><div class="stat"><b>${D.streak}</b><span>bonnes réponses d'affilée</span></div></div><div class="bar" role="progressbar" aria-valuenow="${ov}" aria-valuemin="0" aria-valuemax="100"><div style="width:${ov}%"></div></div>
-  <div class="row">${next?`<button class="btn pri" data-act="law" data-id="${next.id}">${D.tot?'Continuer : ':'Commencer par '}${next.name}</button>`:`<span class="chip good">Les 10 lois sont maîtrisées</span>`}<button class="btn" data-act="weak">Réviser mes points faibles</button><button class="btn" data-act="exam">Examen mixte (10 questions)</button></div></div>`;
-  h+=`<div class="stack"><h2>Les 10 lois</h2><div class="laws">`+LAWS.map(l=>{const[st,c]=status(l.id);return`<button class="lawcard" data-act="law" data-id="${l.id}"><div class="row" style="justify-content:space-between"><span class="chip ${c}">${st}</span><span class="muted" style="font-size:13px">${l.tag}</span></div><h3>${l.name}</h3><span class="reco">${l.reco}</span>${pips(l.id)}</button>`;}).join('')+`</div></div>`;
+  let h=`<div class="hero"><span class="eyebrow">Lois de probabilité pour l'actuariat</span><h1>Maîtrise les ${LAWS.length} lois de l'actuaire</h1><p>Pour chaque loi : une leçon courte avec un exemple d'assurance, un laboratoire à curseurs, un quiz et des exercices chiffrés corrigés. Une loi est maîtrisée quand tu réussis <b>7 des 8</b> dernières réponses.</p></div>`;
+  h+=`<div class="panel stack"><div class="dash"><div class="stat"><b>${nMastered()}/${LAWS.length}</b><span>lois maîtrisées</span></div><div class="stat"><b>${ov} %</b><span>maîtrise globale</span></div><div class="stat"><b>${D.tot}</b><span>réponses données</span></div><div class="stat"><b>${acc} %</b><span>de réussite</span></div><div class="stat"><b>${D.streak}</b><span>bonnes réponses d'affilée</span></div></div><div class="bar" role="progressbar" aria-valuenow="${ov}" aria-valuemin="0" aria-valuemax="100"><div style="width:${ov}%"></div></div>
+  <div class="row">${next?`<button class="btn pri" data-act="law" data-id="${next.id}">${D.tot?'Continuer : ':'Commencer par '}${next.name}</button>`:`<span class="chip good">Les ${LAWS.length} lois sont maîtrisées</span>`}<button class="btn" data-act="weak">Réviser mes points faibles</button><button class="btn" data-act="exam">Examen mixte (10 questions)</button></div></div>`;
+  h+=`<div class="stack"><h2>Les ${LAWS.length} lois</h2><div class="laws">`+LAWS.map(l=>{const[st,c]=status(l.id);return`<button class="lawcard" data-act="law" data-id="${l.id}"><div class="row" style="justify-content:space-between"><span class="chip ${c}">${st}</span><span class="muted" style="font-size:13px">${l.tag}</span></div><h3>${l.name}</h3><span class="reco">${l.reco}</span>${pips(l.id)}</button>`;}).join('')+`</div></div>`;
   if(D.exams.length)h+=`<div class="panel stack"><h3>Derniers examens</h3><div class="row">`+D.exams.slice(-5).reverse().map(e=>`<span class="chip ${e.s/e.n>=.8?'good':'mute'}">${e.d} · ${e.s}/${e.n}</span>`).join('')+`</div></div>`;
   return h;
 }
@@ -535,7 +561,7 @@ function lawHTML(L){
   return h;
 }
 function sheetHTML(){
-  const dec=[['Un seul essai oui ou non','Bernoulli'],['Succès parmi n essais','Binomiale'],['Événements sur une période','Poisson'],['Essais jusqu\'au 1er succès','Géométrique'],['Délai sans mémoire','Exponentielle'],['Somme de délais exponentiels','Gamma'],['Montant positif asymétrique','Lognormale'],['Montant extrême, queue lourde','Pareto'],['Somme de nombreux petits risques','Normale'],['Tout équiprobable sur [a, b]','Uniforme']];
+  const dec=[['Un seul essai oui ou non','Bernoulli'],['Succès parmi n essais','Binomiale'],['Événements sur une période','Poisson'],['Comptage avec variance > moyenne','Binomiale négative'],['Essais jusqu\'au 1er succès','Géométrique'],['Délai sans mémoire','Exponentielle'],['Somme de délais exponentiels','Gamma'],['Montant positif asymétrique','Lognormale'],['Montant extrême, queue lourde','Pareto'],['Somme de nombreux petits risques','Normale'],['Tout équiprobable sur [a, b]','Uniforme']];
   return`<div class="stack"><span class="eyebrow">Fiche récapitulative</span><h2>Toutes les lois sur une page</h2></div>
   <div class="panel stack"><h3>Quelle loi choisir ?</h3><ul class="decide">${dec.map(d=>`<li><span>${d[0]}</span><b>→ ${d[1]}</b></li>`).join('')}</ul></div>
   <div class="panel"><div class="scroll"><table><thead><tr><th>Loi</th><th>Type</th><th>E[X]</th><th>Var(X)</th><th>Usage actuariel</th></tr></thead><tbody>${LAWS.map(l=>`<tr><td><b>${l.name}</b></td><td>${l.tag}</td><td class="m">${l.eS}</td><td class="m">${l.vS}</td><td>${l.use}</td></tr>`).join('')}</tbody></table></div></div>
