@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>Atelier des lois</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a rail of the ten laws (side rail on desktop, scroll strip on phone) beside a single working area. */
+:root{
+  --bg:#EDF1F3; --surface:#FFFFFF; --ink:#12202B; --muted:#586873; --line:#D2DBE1; --bar:#A9BAC5;
+  --accent:#0B6E78; --accent-ink:#FFFFFF; --accent-soft:#D8EDEF;
+  --good:#1E7B4A; --good-soft:#DCF0E4; --bad:#B3372C; --bad-soft:#F8DEDA; --warn:#8F6200; --warn-soft:#F6EBCB;
+  --display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --body:'Source Sans 3','Segoe UI',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E161C; --surface:#16212A; --ink:#E6EEF2; --muted:#93A4AF; --line:#2A3945; --bar:#3F5666;
+  --accent:#4CC3CF; --accent-ink:#06262A; --accent-soft:#143A40;
+  --good:#5BCB8B; --good-soft:#14352A; --bad:#F0847A; --bad-soft:#3B1F1C; --warn:#E0B34A; --warn-soft:#3A2F12; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E161C; --surface:#16212A; --ink:#E6EEF2; --muted:#93A4AF; --line:#2A3945; --bar:#3F5666;
+  --accent:#4CC3CF; --accent-ink:#06262A; --accent-soft:#143A40;
+  --good:#5BCB8B; --good-soft:#14352A; --bad:#F0847A; --bad-soft:#3B1F1C; --warn:#E0B34A; --warn-soft:#3A2F12; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 17px/1.55 var(--body);padding-inline:16px;padding-block:20px 48px}
+.app{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:230px minmax(0,1fr);gap:28px;align-items:start}
+h1,h2,h3{font-family:var(--display);line-height:1.12;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:clamp(30px,5vw,46px);font-weight:700}
+h2{font-size:clamp(24px,3.6vw,32px);font-weight:700}
+h3{font-size:19px;font-weight:700}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.eyebrow{font:600 12px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.muted{color:var(--muted)}
+.mono{font-family:var(--mono)}
+
+/* rail */
+.rail{position:sticky;top:env(safe-area-inset-top,0px);display:flex;flex-direction:column;gap:4px;padding-top:4px}
+.brand{font:700 20px/1 var(--display);margin-bottom:14px;display:flex;flex-direction:column;gap:6px}
+.brand span{font:600 11px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.rail button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:5px;padding:9px 12px;border-radius:8px;border:1px solid transparent}
+.rail button:hover{background:var(--surface)}
+.rail button:focus-visible{outline:3px solid var(--accent)}
+.rail button[aria-current="page"]{background:var(--surface);border-color:var(--line)}
+.rail .nm{font-weight:600;font-size:16px;white-space:nowrap}
+.rail .sep{height:1px;background:var(--line);margin:8px 0}
+.pips{display:flex;gap:3px}
+.pips i{width:9px;height:9px;border-radius:2px;background:transparent;border:1.5px solid var(--line)}
+.pips i.on{background:var(--good);border-color:var(--good)}
+.pips i.off{background:var(--bad);border-color:var(--bad)}
+
+main{min-width:0;display:flex;flex-direction:column;gap:22px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface);padding:10px 16px;border-radius:8px;font-weight:600}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.5;cursor:default}
+.chip{display:inline-block;font:600 12px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:5px;background:var(--accent-soft);color:var(--accent)}
+.chip.good{background:var(--good-soft);color:var(--good)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.chip.mute{background:var(--bg);color:var(--muted)}
+.bar{height:10px;background:var(--bg);border-radius:5px;overflow:hidden;border:1px solid var(--line)}
+.bar>div{height:100%;background:var(--accent)}
+
+/* home */
+.hero{display:flex;flex-direction:column;gap:14px;padding-block:6px}
+.hero p{max-width:62ch;color:var(--muted);font-size:18px}
+.dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:18px}
+.stat b{display:block;font:700 34px/1.05 var(--display);font-variant-numeric:tabular-nums}
+.stat span{font-size:14px;color:var(--muted)}
+.laws{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.lawcard{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.lawcard:hover{border-color:var(--accent)}
+.lawcard:focus-visible{outline:3px solid var(--accent)}
+.lawcard h3{font-size:20px}
+.lawcard .reco{font-size:15px;color:var(--muted)}
+
+/* tabs */
+.tabs{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--line)}
+.tabs button{all:unset;box-sizing:border-box;cursor:pointer;padding:10px 14px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs button:focus-visible{outline:3px solid var(--accent)}
+.lead{font:500 21px/1.4 var(--display);max-width:60ch}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.formulas{font:400 15.5px/1.9 var(--mono);background:var(--bg);border-radius:8px;padding:14px 16px;overflow-x:auto;white-space:pre}
+.tips{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.tips li{padding-left:22px;position:relative}
+.tips li::before{content:"";position:absolute;left:2px;top:.6em;width:9px;height:9px;border-radius:2px;background:var(--accent)}
+.trap{border-left:4px solid var(--bad);background:var(--bad-soft);padding:12px 14px;border-radius:0 8px 8px 0}
+.trap b{color:var(--bad)}
+
+/* explorer */
+.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font:12px var(--mono)}
+.ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px 22px}
+.ctl label{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:15px}
+.ctl output{font:600 15px var(--mono);color:var(--accent)}
+.ctl input[type=range]{width:100%;accent-color:var(--accent)}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.kv div{background:var(--bg);border-radius:8px;padding:10px 12px}
+.kv small{display:block;color:var(--muted);font-size:13px}
+.kv b{font:600 19px var(--mono);font-variant-numeric:tabular-nums;word-break:break-word}
+.kv .hl{background:var(--accent-soft)}
+.kv .hl b{color:var(--accent)}
+
+/* sessions */
+.prog{display:flex;align-items:center;gap:12px}
+.prog .bar{flex:1}
+.q{font:500 22px/1.35 var(--display);max-width:62ch}
+.q b{font-weight:700}
+.opts{display:flex;flex-direction:column;gap:9px}
+.opt{text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:8px;padding:12px 14px;display:flex;gap:12px}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt .k{font:600 14px var(--mono);color:var(--muted);padding-top:2px}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt:disabled{cursor:default}
+.ans{display:flex;flex-wrap:wrap;gap:10px}
+.ans input{font:600 20px var(--mono);padding:10px 14px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);width:min(100%,220px)}
+.fb{padding:14px 16px;border-radius:8px;display:flex;flex-direction:column;gap:6px}
+.fb.ok{background:var(--good-soft)}
+.fb.ko{background:var(--bad-soft)}
+.fb strong{font-family:var(--display);font-size:18px}
+.fb.ok strong{color:var(--good)}
+.fb.ko strong{color:var(--bad)}
+.hint{background:var(--warn-soft);color:var(--ink);padding:10px 14px;border-radius:8px;font-family:var(--mono);font-size:14.5px}
+.big{font:700 clamp(44px,9vw,72px)/1 var(--display);font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:15px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+td.m{font-family:var(--mono);font-size:13.5px}
+.decide{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px 24px;margin:0;padding:0;list-style:none}
+.decide li{display:flex;gap:10px;align-items:baseline}
+.decide b{white-space:nowrap}
+
+@media (max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr);gap:16px}
+  .rail{position:static;flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:8px}
+  .brand{display:none}
+  .rail button{flex:0 0 auto;background:var(--surface);border-color:var(--line)}
+  .rail .sep{display:none}
+  .panel{padding:16px}
+}
+@media (prefers-reduced-motion:no-preference){.bar>div{transition:width .5s}}
+</style>
+
+<div class="app">
+  <nav class="rail" id="rail" aria-label="Navigation"></nav>
+  <main id="main"></main>
+</div>
+
+<script>
+(function(){
+'use strict';
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const fr=(x,d=3)=>isFinite(x)?Number(x).toLocaleString('fr-FR',{maximumFractionDigits:d}):'∞';
+const $=s=>document.querySelector(s);
+const comb=(n,k)=>{let r=1;for(let i=1;i<=k;i++)r=r*(n-k+i)/i;return r;};
+function lg(x){const c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];let y=x,t=x+5.5;t-=(x+.5)*Math.log(t);let s=1.000000000190015;for(let j=0;j<6;j++)s+=c[j]/++y;return -t+Math.log(2.5066282746310005*s/x);}
+function erf(x){const s=Math.sign(x);x=Math.abs(x);const t=1/(1+.3275911*x);return s*(1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-.284496736)*t+.254829592)*t*Math.exp(-x*x));}
+const Phi=z=>.5*(1+erf(z/Math.SQRT2));
+const PHI={0.5:.6915,1:.8413,1.5:.9332,2:.9772};
+const sumF=(f,lo,k)=>{let s=0;for(let i=lo;i<=k;i++)s+=f(i);return Math.min(1,s);};
+function simpson(f,a,b,n=400){if(b<=a)return 0;const h=(b-a)/n;let s=f(a)+f(b);for(let i=1;i<n;i++)s+=f(a+i*h)*(i%2?4:2);return s*h/3;}
+
+/* ======================= CONTENU : les 10 lois ======================= */
+const LAWS=[
+{id:'bernoulli',name:'Bernoulli',tag:'discrète',reco:'Un seul essai, oui ou non',
+ idea:`Une seule expérience, deux issues : succès (1) avec la probabilité p, échec (0) sinon. C'est la brique de base de presque toutes les autres lois de comptage.`,
+ ex:`Une police d'assurance auto sur un an : sinistre (1) ou pas de sinistre (0). Si 8 % des assurés ont un sinistre, alors p = 0,08.`,
+ formulas:`P(X=1) = p        P(X=0) = 1 − p\nE[X]   = p\nVar(X) = p(1 − p)`,
+ eS:'p',vS:'p(1−p)',use:'Indicateur de sinistre, de décès, de défaut',
+ tips:[`E[X] = p : l'espérance d'un indicateur est la probabilité de l'événement.`,`La variance est maximale pour p = 0,5 (elle vaut alors 0,25). Elle tend vers 0 quand p approche 0 ou 1.`,`Une perte de montant fixe L avec probabilité p s'écrit L·X : espérance L·p, variance L²·p(1−p).`],
+ trap:`La variance est p(1−p), pas p². Et pour une perte L·X, la constante L passe au carré dans la variance.`,
+ kind:'d',params:[{k:'p',l:'p (probabilité de succès)',min:.02,max:.98,step:.01,v:.3}],
+ range:p=>[0,1],f:(p,k)=>k===1?p.p:k===0?1-p.p:0,F:(p,k)=>k<0?0:k<1?1-p.p:1,
+ mean:p=>p.p,vr:p=>p.p*(1-p.p),
+ gen:[
+  ()=>{const p=rnd([.05,.1,.15,.2,.25,.3]);return{q:`Un assuré a une probabilité <b>${fr(p)}</b> d'avoir un sinistre dans l'année. Soit X l'indicateur du sinistre (1 si sinistre, 0 sinon). Calcule <b>Var(X)</b>.`,a:p*(1-p),hint:'Var(X) = p(1 − p)',sol:`X est une Bernoulli(${fr(p)}). Var(X) = p(1 − p) = ${fr(p)} × ${fr(1-p)} = ${fr(p*(1-p),4)}.`};},
+  ()=>{const p=rnd([.05,.1,.2,.25]),L=rnd([1000,2000,5000]);return{q:`Une police verse <b>${fr(L)} €</b> en cas de sinistre, qui survient avec la probabilité <b>${fr(p)}</b>. Quelle est la perte moyenne (espérance) par police, en euros ?`,a:L*p,hint:'E[L·X] = L · p',sol:`La perte vaut L·X avec X ~ Bernoulli(${fr(p)}). E[L·X] = L × p = ${fr(L)} × ${fr(p)} = ${fr(L*p,2)} €.`};},
+  ()=>{const p=rnd([.1,.2,.25]),L=rnd([10,20,100]);return{q:`Même situation : perte de <b>${L} €</b> avec la probabilité <b>${fr(p)}</b>. Calcule la <b>variance</b> de la perte (en €²).`,a:L*L*p*(1-p),hint:'Var(L·X) = L² · p(1 − p)',sol:`Var(L·X) = L² · p(1 − p) = ${L*L} × ${fr(p*(1-p),4)} = ${fr(L*L*p*(1-p),2)}.`};},
+  ()=>{const p=rnd([.1,.2,.3,.4]),v=p*(1-p);return{q:`Une Bernoulli a pour variance <b>${fr(v,4)}</b>, et on sait que p < 0,5. Quelle est la valeur de <b>p</b> ?`,a:p,hint:'Résous p(1 − p) = variance',sol:`p(1 − p) = ${fr(v,4)} donne p² − p + ${fr(v,4)} = 0. Les deux racines sont ${fr(p)} et ${fr(1-p)} ; comme p < 0,5, p = ${fr(p)}.`};}
+ ],
+ qcm:[
+  {q:`Une police a 12 % de risque de sinistre. X vaut 1 s'il y a sinistre. Que vaut E[X] ?`,o:['0,12','0,1056','0,88','1,2'],c:0,e:`Pour une Bernoulli, E[X] = p = 0,12.`},
+  {q:`Avec la même police (p = 0,12), que vaut Var(X) ?`,o:['0,12','0,1056','0,0144','0,88'],c:1,e:`Var(X) = p(1 − p) = 0,12 × 0,88 = 0,1056.`},
+  {q:`Pour quelle valeur de p la variance d'une Bernoulli est-elle la plus grande ?`,o:['p = 0','p = 0,5','p = 1','p = 0,25'],c:1,e:`p(1 − p) est une parabole maximale en p = 0,5, où elle vaut 0,25.`},
+  {q:`Quelle situation est modélisée par une loi de Bernoulli ?`,o:[`Le nombre de sinistres d'un portefeuille en un an`,`Un assuré a-t-il un sinistre cette année (oui ou non) ?`,`Le montant d'un sinistre`,`Le délai avant le premier sinistre`],c:1,e:`Bernoulli = un seul essai avec deux issues possibles.`}
+ ]},
+
+{id:'binomiale',name:'Binomiale',tag:'discrète',reco:'Nombre de succès sur n essais',
+ idea:`C'est le nombre de succès parmi n essais indépendants qui ont tous la même probabilité p. Autrement dit, une somme de n Bernoulli(p) indépendantes.`,
+ ex:`Un portefeuille de 20 polices indépendantes, chacune avec 10 % de risque de sinistre. Le nombre de polices sinistrées suit une Binomiale(20 ; 0,1).`,
+ formulas:`P(X=k) = C(n,k) · p^k · (1−p)^(n−k)\nE[X]   = n·p\nVar(X) = n·p·(1−p)`,
+ eS:'np',vS:'np(1−p)',use:'Nombre de sinistrés dans un portefeuille de taille fixe',
+ tips:[`Var < E toujours, car (1 − p) < 1. Si tu vois une variance supérieure à la moyenne, ce n'est pas une binomiale.`,`« Au moins un » : passe par le complémentaire. P(X ≥ 1) = 1 − (1 − p)^n, bien plus rapide que de sommer.`,`Deux binomiales indépendantes de même p s'additionnent : Bin(n₁,p) + Bin(n₂,p) = Bin(n₁+n₂, p).`],
+ trap:`Il faut l'indépendance et la même probabilité p pour tous les essais. Deux assurés d'une même famille ne sont pas indépendants pour un incendie.`,
+ kind:'d',params:[{k:'n',l:'n (nombre d\'essais)',min:1,max:40,step:1,v:20},{k:'p',l:'p (probabilité de succès)',min:.01,max:.99,step:.01,v:.1}],
+ range:p=>[0,p.n],f:(p,k)=>k<0||k>p.n?0:Math.exp(lg(p.n+1)-lg(k+1)-lg(p.n-k+1)+k*Math.log(p.p)+(p.n-k)*Math.log(1-p.p)),
+ F:null,mean:p=>p.n*p.p,vr:p=>p.n*p.p*(1-p.p),
+ gen:[
+  ()=>{const n=ri(8,15),p=rnd([.1,.15,.2,.25]),k=ri(0,3),a=comb(n,k)*Math.pow(p,k)*Math.pow(1-p,n-k);return{q:`Un portefeuille compte <b>${n}</b> polices indépendantes, chacune avec la probabilité <b>${fr(p)}</b> d'avoir un sinistre dans l'année. Quelle est la probabilité d'avoir exactement <b>${k}</b> police${k>1?'s':''} sinistrée${k>1?'s':''} ?`,a,hint:'P(X=k) = C(n,k) · p^k · (1−p)^(n−k)',sol:`X ~ Bin(${n} ; ${fr(p)}). P(X=${k}) = C(${n},${k}) × ${fr(p)}^${k} × ${fr(1-p)}^${n-k} = ${fr(comb(n,k))} × ${fr(Math.pow(p,k),5)} × ${fr(Math.pow(1-p,n-k),5)} = ${fr(a,4)}.`};},
+  ()=>{const n=rnd([20,50,100,200]),p=rnd([.02,.05,.1,.15]);return{q:`Sur <b>${n}</b> polices indépendantes, chacune a la probabilité <b>${fr(p)}</b> de sinistre. Combien de sinistres attend-on en moyenne ?`,a:n*p,hint:'E[X] = n · p',sol:`E[X] = n·p = ${n} × ${fr(p)} = ${fr(n*p)}.`};},
+  ()=>{const n=rnd([5,8,10,12]),p=rnd([.05,.1,.2]),a=1-Math.pow(1-p,n);return{q:`<b>${n}</b> polices indépendantes, probabilité <b>${fr(p)}</b> de sinistre chacune. Quelle est la probabilité qu'il y ait <b>au moins un</b> sinistre ?`,a,hint:'P(X ≥ 1) = 1 − P(X = 0) = 1 − (1−p)^n',sol:`P(X ≥ 1) = 1 − P(X=0) = 1 − ${fr(1-p)}^${n} = 1 − ${fr(Math.pow(1-p,n),4)} = ${fr(a,4)}.`};},
+  ()=>{const n=rnd([10,20,40,50]),p=rnd([.1,.2,.25,.4]);return{q:`Soit X ~ Binomiale(<b>${n}</b> ; <b>${fr(p)}</b>). Calcule <b>Var(X)</b>.`,a:n*p*(1-p),hint:'Var(X) = n · p · (1−p)',sol:`Var(X) = n·p·(1−p) = ${n} × ${fr(p)} × ${fr(1-p)} = ${fr(n*p*(1-p))}.`};}
+ ],
+ qcm:[
+  {q:`20 polices indépendantes, p = 0,1 chacune. Quel est le nombre moyen de sinistres ?`,o:['2','1,8','0,1','20'],c:0,e:`E[X] = n·p = 20 × 0,1 = 2.`},
+  {q:`Pour la même binomiale (n = 20, p = 0,1), que vaut la variance ?`,o:['2','1,8','0,18','4'],c:1,e:`Var = n·p·(1−p) = 20 × 0,1 × 0,9 = 1,8. Elle est bien plus petite que la moyenne (2).`},
+  {q:`Laquelle de ces hypothèses n'est PAS nécessaire pour une loi binomiale ?`,o:['Les essais sont indépendants','La probabilité p est la même pour chaque essai','Le nombre d\'essais n est fixé à l\'avance','Tous les sinistres ont le même montant'],c:3,e:`La binomiale compte des succès. Le montant des sinistres n'intervient pas.`},
+  {q:`n = 10 et p = 0,05. Quelle est la façon la plus rapide de calculer P(X ≥ 1) ?`,o:['1 − 0,95¹⁰','Sommer P(X=1) + … + P(X=10)','10 × 0,05','0,05¹⁰'],c:0,e:`Le complémentaire de « au moins un » est « aucun » : P(X ≥ 1) = 1 − (1 − p)^n.`}
+ ]},
+
+{id:'poisson',name:'Poisson',tag:'discrète',reco:'Nombre d\'événements sur une période',
+ idea:`Elle compte des événements rares et indépendants qui arrivent à un rythme moyen λ sur une période donnée. Pas de nombre maximal d'essais : 0, 1, 2, 3… sans limite.`,
+ ex:`Un portefeuille subit en moyenne 3 sinistres par an. Le nombre de sinistres d'une année suit une Poisson(λ = 3).`,
+ formulas:`P(X=k) = e^(−λ) · λ^k / k!\nE[X]   = λ\nVar(X) = λ`,
+ eS:'λ',vS:'λ',use:'Fréquence des sinistres (nombre de sinistres par an)',
+ tips:[`Moyenne = variance = λ : c'est le test de reconnaissance. Si la variance observée est bien plus grande que la moyenne, on parle de surdispersion et on passe à une binomiale négative.`,`Le taux suit la durée : λ = 3 par an devient 1,5 pour 6 mois et 6 pour 2 ans.`,`Poisson(λ₁) + Poisson(λ₂) indépendantes = Poisson(λ₁+λ₂).`,`P(X=0) = e^(−λ) : réflexe pour « aucun sinistre » et pour « au moins un » (1 − e^(−λ)).`],
+ trap:`P(X ≥ 1) vaut 1 − e^(−λ), pas λ. Et pense à convertir λ dans l'unité de temps de la question.`,
+ kind:'d',params:[{k:'l',l:'λ (taux moyen)',min:.2,max:20,step:.1,v:3}],
+ range:p=>[0,Math.ceil(p.l+5*Math.sqrt(p.l)+3)],f:(p,k)=>k<0?0:Math.exp(-p.l+k*Math.log(p.l)-lg(k+1)),F:null,
+ mean:p=>p.l,vr:p=>p.l,
+ gen:[
+  ()=>{const l=rnd([1,2,3,4,5]),k=ri(0,4),a=Math.exp(-l)*Math.pow(l,k)/comb(k,k)/[1,1,2,6,24][k];return{q:`Le nombre de sinistres annuels suit une loi de Poisson de paramètre <b>λ = ${l}</b>. Quelle est la probabilité d'avoir exactement <b>${k}</b> sinistre${k>1?'s':''} ?`,a,hint:'P(X=k) = e^(−λ) · λ^k / k!',sol:`P(X=${k}) = e^(−${l}) × ${l}^${k} / ${k}! = ${fr(Math.exp(-l),5)} × ${l**k} / ${[1,1,2,6,24][k]} = ${fr(a,4)}.`};},
+  ()=>{const r=rnd([.5,1,1.5,2]),t=rnd([2,3,4]),l=r*t,a=Math.exp(-l);return{q:`Un portefeuille subit en moyenne <b>${fr(r)}</b> sinistre par mois (loi de Poisson). Quelle est la probabilité de n'avoir <b>aucun sinistre en ${t} mois</b> ?`,a,hint:'Convertis λ sur la durée : λ_période = taux × durée',sol:`Sur ${t} mois, λ = ${fr(r)} × ${t} = ${fr(l)}. P(X=0) = e^(−${fr(l)}) = ${fr(a,4)}.`};},
+  ()=>{const l=rnd([1,2,3,4]),a=Math.exp(-l)*(1+l);return{q:`X ~ Poisson(<b>${l}</b>). Calcule <b>P(X ≤ 1)</b>.`,a,hint:'P(X ≤ 1) = P(X=0) + P(X=1)',sol:`P(X ≤ 1) = e^(−${l}) + ${l}·e^(−${l}) = e^(−${l})(1 + ${l}) = ${fr(a,4)}.`};},
+  ()=>{const l=rnd([1,2,3]),a=1-Math.exp(-l)*(1+l);return{q:`X ~ Poisson(<b>${l}</b>). Calcule la probabilité d'avoir <b>au moins 2</b> sinistres.`,a,hint:'P(X ≥ 2) = 1 − P(X=0) − P(X=1)',sol:`P(X ≥ 2) = 1 − e^(−${l})(1 + ${l}) = 1 − ${fr(1-a,4)} = ${fr(a,4)}.`};}
+ ],
+ qcm:[
+  {q:`Les sinistres suivent une Poisson(λ = 3) par an. Que valent l'espérance et la variance ?`,o:['E = 3 et Var = 3','E = 3 et Var = 9','E = 3 et Var = √3','E = 3 et Var = 1/3'],c:0,e:`Pour une Poisson, E[X] = Var(X) = λ.`},
+  {q:`On observe un nombre de sinistres de moyenne 4 et de variance 12. La loi de Poisson convient-elle ?`,o:['Oui','Non : la variance dépasse la moyenne (surdispersion)','Non : la variance est inférieure à la moyenne','Oui, car 12 est un multiple de 4'],c:1,e:`Une Poisson impose Var = E. Ici Var > E : on cherchera plutôt une binomiale négative.`},
+  {q:`Il y a en moyenne 2 sinistres par an. Quelle loi décrit le nombre de sinistres sur 6 mois ?`,o:['Poisson(1)','Poisson(2)','Poisson(4)','Poisson(0,5)'],c:0,e:`Le taux est proportionnel à la durée : 2 × 0,5 = 1.`},
+  {q:`Deux portefeuilles indépendants ont des sinistres Poisson(2) et Poisson(3). Que dire du total ?`,o:['Poisson(5)','Poisson(6)','Poisson(2,5)','Une loi normale exacte'],c:0,e:`La somme de Poisson indépendantes est une Poisson dont les paramètres s'additionnent.`}
+ ]},
+
+{id:'geometrique',name:'Géométrique',tag:'discrète',reco:'Nombre d\'essais jusqu\'au 1er succès',
+ idea:`On répète des essais indépendants de probabilité p, et on s'arrête au premier succès. X est le rang de cet essai : 1, 2, 3… La loi n'a pas de mémoire.`,
+ ex:`Chaque année, un assuré a 20 % de chances d'avoir un sinistre. X est l'année du premier sinistre : on l'attend en moyenne 1/0,2 = 5 ans.`,
+ formulas:`P(X=k) = (1−p)^(k−1) · p     k = 1, 2, 3…\nP(X>k) = (1−p)^k\nE[X]   = 1/p\nVar(X) = (1−p)/p²`,
+ eS:'1/p',vS:'(1−p)/p²',use:'Années avant un premier sinistre, durée de vie discrète',
+ tips:[`P(X > k) : k échecs de suite, donc (1−p)^k. Pas de somme à faire.`,`Sans mémoire : après 5 années sans sinistre, la probabilité d'un sinistre l'an prochain reste p.`,`Moyenne 1/p : p = 0,25 donne 4 essais en moyenne. Plus p est petit, plus l'attente est longue.`],
+ trap:`Deux conventions existent. Ici X compte les essais (k ≥ 1). Certains livres comptent les échecs avant le succès (k ≥ 0) et la moyenne devient (1−p)/p. Lis la définition de l'énoncé.`,
+ kind:'d',params:[{k:'p',l:'p (probabilité de succès)',min:.05,max:.9,step:.01,v:.25}],
+ range:p=>[1,Math.min(40,Math.ceil(4/p.p))],f:(p,k)=>k<1?0:Math.pow(1-p.p,k-1)*p.p,F:(p,k)=>k<1?0:1-Math.pow(1-p.p,Math.floor(k)),
+ mean:p=>1/p.p,vr:p=>(1-p.p)/(p.p*p.p),
+ gen:[
+  ()=>{const p=rnd([.1,.2,.25,.5]);return{q:`Chaque année, un assuré a la probabilité <b>${fr(p)}</b> d'avoir un sinistre. En moyenne, au bout de combien d'années survient le <b>premier</b> sinistre ?`,a:1/p,hint:'E[X] = 1/p',sol:`X suit une loi géométrique de paramètre ${fr(p)}. E[X] = 1/p = 1/${fr(p)} = ${fr(1/p)} années.`};},
+  ()=>{const p=rnd([.1,.2,.25,.5]),k=ri(2,4),a=Math.pow(1-p,k-1)*p;return{q:`Même situation (p = <b>${fr(p)}</b> par an). Quelle est la probabilité que le premier sinistre ait lieu <b>exactement la ${k}ᵉ année</b> ?`,a,hint:'P(X=k) = (1−p)^(k−1) · p',sol:`${k-1} années sans sinistre puis un sinistre : ${fr(1-p)}^${k-1} × ${fr(p)} = ${fr(a,4)}.`};},
+  ()=>{const p=rnd([.1,.2,.25]),k=ri(2,5),a=Math.pow(1-p,k);return{q:`Probabilité annuelle de sinistre : <b>${fr(p)}</b>. Quelle est la probabilité de <b>ne pas avoir de sinistre pendant ${k} ans</b> (c'est-à-dire P(X > ${k})) ?`,a,hint:'P(X > k) = (1−p)^k',sol:`P(X > ${k}) = (1 − ${fr(p)})^${k} = ${fr(1-p)}^${k} = ${fr(a,4)}.`};},
+  ()=>{const p=rnd([.1,.2,.25,.5]);return{q:`X suit une loi géométrique de paramètre <b>p = ${fr(p)}</b> (nombre d'essais). Calcule <b>Var(X)</b>.`,a:(1-p)/(p*p),hint:'Var(X) = (1−p)/p²',sol:`Var(X) = (1 − ${fr(p)}) / ${fr(p)}² = ${fr(1-p)} / ${fr(p*p,4)} = ${fr((1-p)/(p*p))}.`};}
+ ],
+ qcm:[
+  {q:`Un assuré a une probabilité 0,25 de sinistre par an. X est l'année du premier sinistre. Que vaut E[X] ?`,o:['4','0,25','0,75','3'],c:0,e:`E[X] = 1/p = 1/0,25 = 4 ans.`},
+  {q:`Avec p = 0,25, que vaut P(X > 3) ?`,o:['0,75³','0,25³','3 × 0,25','1 − 0,75³'],c:0,e:`X > 3 signifie 3 années sans sinistre : (1 − p)³ = 0,75³ ≈ 0,42.`},
+  {q:`Quelle propriété caractérise la loi géométrique ?`,o:['Elle est sans mémoire','Elle est symétrique','Sa variance égale sa moyenne','Elle prend des valeurs continues'],c:0,e:`P(X > s + t | X > s) = P(X > t) : le passé n'influence pas l'avenir.`},
+  {q:`Un assuré n'a eu aucun sinistre depuis 5 ans. Quelle est la probabilité d'un sinistre l'an prochain ?`,o:['p','p / 5','1 − (1−p)⁵','0'],c:0,e:`Sans mémoire : les 5 années passées ne changent rien, la probabilité reste p.`}
+ ]},
+
+{id:'uniforme',name:'Uniforme',tag:'continue',reco:'Tout est équiprobable sur [a, b]',
+ idea:`Toutes les valeurs d'un intervalle [a, b] sont également plausibles. Une probabilité se lit comme une longueur d'intervalle divisée par la longueur totale.`,
+ ex:`Hypothèse UDD en assurance vie : les décès d'une année d'âge sont répartis uniformément entre 0 et 1. Le moment du décès suit une Uniforme(0 ; 1).`,
+ formulas:`f(x) = 1/(b−a)  sur [a, b]\nF(x) = (x−a)/(b−a)\nE[X]   = (a+b)/2\nVar(X) = (b−a)²/12`,
+ eS:'(a+b)/2',vS:'(b−a)²/12',use:'Date de décès ou de sinistre dans l\'année (UDD)',
+ tips:[`P(c ≤ X ≤ d) = (d − c)/(b − a) : un simple rapport de longueurs, sans intégrale.`,`La moyenne est le milieu de l'intervalle.`,`Le « 12 » de la variance est à retenir avec (b−a)² au numérateur. Pour U(0,1) : 1/12.`],
+ trap:`Dans la variance, c'est (b − a) au carré divisé par 12, pas (b − a)/12 ni la moitié de la longueur.`,
+ kind:'c',params:[{k:'a',l:'a (borne basse)',min:0,max:10,step:.5,v:2},{k:'w',l:'b − a (largeur)',min:1,max:20,step:.5,v:8}],
+ range:p=>[p.a-.15*p.w,p.a+1.15*p.w],f:(p,x)=>x>=p.a&&x<=p.a+p.w?1/p.w:0,F:(p,x)=>x<p.a?0:x>p.a+p.w?1:(x-p.a)/p.w,
+ mean:p=>p.a+p.w/2,vr:p=>p.w*p.w/12,
+ gen:[
+  ()=>{const a=ri(0,10),b=a+ri(4,20);return{q:`X suit une loi uniforme sur <b>[${a} ; ${b}]</b>. Calcule <b>E[X]</b>.`,a:(a+b)/2,hint:'E[X] = (a+b)/2',sol:`E[X] = (${a} + ${b})/2 = ${fr((a+b)/2)}.`};},
+  ()=>{const a=ri(0,5),L=rnd([6,12,18,24]),b=a+L;return{q:`X suit une loi uniforme sur <b>[${a} ; ${b}]</b>. Calcule <b>Var(X)</b>.`,a:L*L/12,hint:'Var(X) = (b−a)²/12',sol:`Var(X) = (${b} − ${a})²/12 = ${L*L}/12 = ${fr(L*L/12)}.`};},
+  ()=>{const a=ri(0,5),L=rnd([10,20,40]),b=a+L,x=a+L*rnd([.25,.4,.5,.6,.75]);return{q:`X suit une loi uniforme sur <b>[${a} ; ${b}]</b>. Calcule <b>P(X ≤ ${fr(x)})</b>.`,a:(x-a)/L,hint:'P(X ≤ x) = (x−a)/(b−a)',sol:`P(X ≤ ${fr(x)}) = (${fr(x)} − ${a})/(${b} − ${a}) = ${fr(x-a)}/${L} = ${fr((x-a)/L,4)}.`};},
+  ()=>{const a=0,L=rnd([10,20,50]),c=L*rnd([.1,.2,.3]),d=L*rnd([.5,.6,.8]);return{q:`Un sinistre survient à un moment uniforme sur <b>[0 ; ${L}]</b> jours. Quelle est la probabilité qu'il survienne <b>entre le jour ${fr(c)} et le jour ${fr(d)}</b> ?`,a:(d-c)/L,hint:'P(c ≤ X ≤ d) = (d−c)/(b−a)',sol:`(${fr(d)} − ${fr(c)}) / ${L} = ${fr(d-c)}/${L} = ${fr((d-c)/L,4)}.`};}
+ ],
+ qcm:[
+  {q:`X suit une loi uniforme sur [0 ; 10]. Que vaut P(X ≤ 4) ?`,o:['0,4','0,25','0,6','4'],c:0,e:`P = (4 − 0)/(10 − 0) = 0,4.`},
+  {q:`Quelle est l'espérance d'une loi uniforme sur [2 ; 8] ?`,o:['5','6','4','3'],c:0,e:`(2 + 8)/2 = 5 : le milieu de l'intervalle.`},
+  {q:`Quelle est la variance d'une loi uniforme sur [0 ; 6] ?`,o:['3','6','36','0,5'],c:0,e:`(b − a)²/12 = 36/12 = 3.`},
+  {q:`« Hypothèse UDD » signifie que…`,o:[`les décès sont répartis uniformément à l'intérieur de chaque année d'âge`,'tous les assurés ont le même âge','la mortalité est constante','les décès n\'ont lieu qu\'en fin d\'année'],c:0,e:`UDD = Uniform Distribution of Deaths : dans chaque année d'âge, la date de décès est uniforme.`}
+ ]},
+
+{id:'exponentielle',name:'Exponentielle',tag:'continue',reco:'Délai sans mémoire',
+ idea:`C'est le temps d'attente avant un événement qui ne vieillit pas : le risque instantané est constant. Elle va de pair avec Poisson : si les sinistres arrivent en Poisson, les délais entre sinistres sont exponentiels.`,
+ ex:`Le délai entre deux sinistres d'un portefeuille est en moyenne de 4 mois : exponentielle de moyenne 4, donc de taux λ = 1/4 par mois.`,
+ formulas:`f(x) = λ · e^(−λx)     x ≥ 0\nS(x) = P(X>x) = e^(−λx)\nF(x) = 1 − e^(−λx)\nE[X] = 1/λ     Var(X) = 1/λ²`,
+ eS:'1/λ',vS:'1/λ²',use:'Délais entre sinistres, durées de vie constantes',
+ tips:[`Sans mémoire : P(X > s+t | X > s) = P(X > t). Avoir déjà attendu ne change rien.`,`Taux ou moyenne ? λ est un taux, la moyenne est 1/λ. Lis l'énoncé : si on te donne une moyenne de 5, λ = 0,2.`,`Écart-type = moyenne. C'est le signe d'une très forte variabilité.`,`Pour « plus de t » utilise S(t) = e^(−λt) directement.`],
+ trap:`Confondre λ et 1/λ. « Moyenne de 4 mois » donne λ = 0,25, pas 4.`,
+ kind:'c',params:[{k:'l',l:'λ (taux)',min:.05,max:2,step:.05,v:.5}],
+ range:p=>[0,5/p.l],f:(p,x)=>x<0?0:p.l*Math.exp(-p.l*x),F:(p,x)=>x<0?0:1-Math.exp(-p.l*x),
+ mean:p=>1/p.l,vr:p=>1/(p.l*p.l),
+ gen:[
+  ()=>{const m=rnd([2,4,5,10]),t=rnd([1,2,3,6,8]),a=Math.exp(-t/m);return{q:`Le délai entre deux sinistres suit une exponentielle de <b>moyenne ${m} mois</b>. Quelle est la probabilité que le délai <b>dépasse ${t} mois</b> ?`,a,hint:'λ = 1/moyenne, puis P(X > t) = e^(−λt)',sol:`λ = 1/${m} = ${fr(1/m)}. P(X > ${t}) = e^(−${fr(1/m)} × ${t}) = e^(−${fr(t/m)}) = ${fr(a,4)}.`};},
+  ()=>{const m=rnd([2,4,5,10]),t=rnd([1,2,3,6]),a=1-Math.exp(-t/m);return{q:`Durée de vie d'un contrat : exponentielle de <b>moyenne ${m} ans</b>. Quelle est la probabilité que le contrat <b>s'arrête avant ${t} ans</b> ?`,a,hint:'P(X ≤ t) = 1 − e^(−λt)',sol:`λ = ${fr(1/m)}. P(X ≤ ${t}) = 1 − e^(−${fr(t/m)}) = ${fr(a,4)}.`};},
+  ()=>{const m=rnd([2,3,4,5,10]);return{q:`X est exponentielle de <b>moyenne ${m}</b>. Calcule <b>Var(X)</b>.`,a:m*m,hint:'Var(X) = 1/λ² = moyenne²',sol:`Moyenne = 1/λ = ${m}, donc Var(X) = 1/λ² = ${m}² = ${m*m}.`};},
+  ()=>{const m=rnd([2,4,5]),s=rnd([1,2,3]),t=rnd([1,2,4]),a=Math.exp(-t/m);return{q:`X est exponentielle de <b>moyenne ${m}</b>. Sachant que X > ${s}, quelle est la probabilité que X dépasse <b>${s+t}</b> ? (calcule P(X > ${s+t} | X > ${s}))`,a,hint:'Sans mémoire : le résultat vaut P(X > t) avec t = écart',sol:`Sans mémoire : P(X > ${s+t} | X > ${s}) = P(X > ${t}) = e^(−${t}/${m}) = ${fr(a,4)}.`};}
+ ],
+ qcm:[
+  {q:`Le délai moyen entre deux sinistres est de 5 mois. Quel est le taux λ de l'exponentielle ?`,o:['0,2','5','0,5','25'],c:0,e:`Moyenne = 1/λ, donc λ = 1/5 = 0,2.`},
+  {q:`X est exponentielle de moyenne 2. Que vaut P(X > 2) ?`,o:['e⁻¹ ≈ 0,368','e⁻² ≈ 0,135','1 − e⁻¹ ≈ 0,632','0,5'],c:0,e:`λ = 0,5 et S(2) = e^(−0,5 × 2) = e⁻¹ ≈ 0,368.`},
+  {q:`Une machine a déjà fonctionné 3 ans (durée exponentielle). Que vaut P(X > 5 | X > 3) ?`,o:['P(X > 2)','P(X > 5)','P(X > 3)','1'],c:0,e:`Sans mémoire : seul l'écart de 2 ans compte.`},
+  {q:`Quelle est la variance d'une exponentielle de moyenne 4 ?`,o:['16','4','2','0,25'],c:0,e:`Var = 1/λ² = (moyenne)² = 16.`}
+ ]},
+
+{id:'normale',name:'Normale',tag:'continue',reco:'Cloche symétrique, sommes de petits risques',
+ idea:`La fameuse cloche. Elle apparaît quand on additionne beaucoup de petits risques indépendants (théorème central limite). Elle est entièrement décrite par sa moyenne μ et son écart-type σ.`,
+ ex:`La charge annuelle totale d'un très grand portefeuille de milliers de polices se comporte comme une Normale. On y lit le seuil de provision à 95 %.`,
+ formulas:`X ~ N(μ, σ²)\nZ = (X − μ)/σ  suit N(0, 1)\nP(X ≤ x) = Φ((x − μ)/σ)\nE[X] = μ     Var(X) = σ²`,
+ eS:'μ',vS:'σ²',use:'Charge totale d\'un grand portefeuille, provisions',
+ tips:[`Toujours standardiser : Z = (X − μ)/σ, puis lire Φ dans la table.`,`Valeurs à connaître : Φ(1) = 0,8413 · Φ(1,645) = 0,95 · Φ(1,96) = 0,975 · Φ(2) = 0,9772.`,`Symétrie : Φ(−z) = 1 − Φ(z). Donc P(X > μ + zσ) = 1 − Φ(z).`,`Règle 68 – 95 – 99,7 : environ 68 % des valeurs sont à moins de 1σ de μ, 95 % à moins de 2σ.`,`Somme de normales indépendantes : les moyennes s'additionnent, les variances aussi (pas les écarts-types).`],
+ trap:`σ est l'écart-type, pas la variance. N(100, 20²) a un écart-type de 20. Et pour une somme de n variables indépendantes, l'écart-type devient σ√n, pas nσ.`,
+ kind:'c',params:[{k:'m',l:'μ (moyenne)',min:0,max:100,step:1,v:50},{k:'s',l:'σ (écart-type)',min:1,max:30,step:1,v:10}],
+ range:p=>[p.m-4*p.s,p.m+4*p.s],f:(p,x)=>Math.exp(-.5*Math.pow((x-p.m)/p.s,2))/(p.s*Math.sqrt(2*Math.PI)),F:(p,x)=>Phi((x-p.m)/p.s),
+ mean:p=>p.m,vr:p=>p.s*p.s,
+ gen:[
+  ()=>{const m=ri(5,15)*10,s=rnd([5,10,15,20]),z=rnd([.5,1,1.5,2]),x=m+z*s;return{q:`La charge annuelle suit une loi normale <b>N(${m} ; ${s}²)</b> (moyenne ${m}, écart-type ${s}). Calcule <b>P(X ≤ ${fr(x)})</b>. Table : Φ(0,5)=0,6915 · Φ(1)=0,8413 · Φ(1,5)=0,9332 · Φ(2)=0,9772.`,a:PHI[z],tol:.0015,hint:'Standardise : z = (x − μ)/σ',sol:`z = (${fr(x)} − ${m})/${s} = ${fr(z)}. P(X ≤ ${fr(x)}) = Φ(${fr(z)}) = ${fr(PHI[z],4)}.`};},
+  ()=>{const m=ri(5,15)*10,s=rnd([5,10,15,20]),z=rnd([.5,1,1.5,2]),x=m+z*s;return{q:`X ~ <b>N(${m} ; ${s}²)</b>. Calcule <b>P(X > ${fr(x)})</b>. Table : Φ(0,5)=0,6915 · Φ(1)=0,8413 · Φ(1,5)=0,9332 · Φ(2)=0,9772.`,a:1-PHI[z],tol:.0015,hint:'P(X > x) = 1 − Φ(z)',sol:`z = (${fr(x)} − ${m})/${s} = ${fr(z)}. P(X > ${fr(x)}) = 1 − Φ(${fr(z)}) = 1 − ${fr(PHI[z],4)} = ${fr(1-PHI[z],4)}.`};},
+  ()=>{const m=ri(5,15)*10,s=rnd([5,10,15,20]);return{q:`X ~ <b>N(${m} ; ${s}²)</b>. Quel est le seuil x tel que <b>P(X ≤ x) = 0,95</b> ? (On donne Φ(1,645) = 0,95.)`,a:m+1.645*s,hint:'x = μ + 1,645 · σ',sol:`x = μ + 1,645σ = ${m} + 1,645 × ${s} = ${fr(m+1.645*s,2)}.`};},
+  ()=>{const m=rnd([10,20,50]),s=rnd([2,3,4,5]),n=rnd([4,9,16]);return{q:`Un portefeuille compte <b>${n}</b> risques indépendants, chacun de moyenne ${m} et d'écart-type ${s}. Quel est l'<b>écart-type</b> de la charge totale S ?`,a:s*Math.sqrt(n),hint:'Var(S) = n σ², puis racine carrée',sol:`Var(S) = ${n} × ${s}² = ${n*s*s}. Écart-type = √${n*s*s} = ${fr(s*Math.sqrt(n),3)} (= σ√n).`};}
+ ],
+ qcm:[
+  {q:`La charge X suit N(100 ; 20²). Que vaut P(X ≤ 100) ?`,o:['0,5','0,84','0,16','1'],c:0,e:`100 est la moyenne ; la loi est symétrique, donc la moitié des valeurs est en dessous.`},
+  {q:`X ~ N(100 ; 20²). Quelle est la valeur standardisée de x = 140 ?`,o:['2','0,5','40','8'],c:0,e:`z = (140 − 100)/20 = 2.`},
+  {q:`X₁ ~ N(10 ; 4) et X₂ ~ N(20 ; 9) sont indépendantes (4 et 9 sont des variances). Quelle est la loi de X₁ + X₂ ?`,o:['N(30 ; 13)','N(30 ; 25)','N(30 ; 5)','N(200 ; 13)'],c:0,e:`Moyennes et variances s'additionnent : 10 + 20 = 30 et 4 + 9 = 13.`},
+  {q:`Que vaut Φ(−1,96) sachant que Φ(1,96) = 0,975 ?`,o:['0,025','0,975','−0,975','0,05'],c:0,e:`Φ(−z) = 1 − Φ(z) = 1 − 0,975 = 0,025.`}
+ ]},
+
+{id:'gamma',name:'Gamma',tag:'continue',reco:'Somme de délais, montants positifs',
+ idea:`C'est la somme de α délais exponentiels indépendants de même taux β (quand α est entier, on parle d'Erlang). Plus généralement, elle modélise des montants positifs et asymétriques.`,
+ ex:`Le temps pour accumuler 3 sinistres, avec un délai moyen de 2 mois entre sinistres : Gamma(α = 3 ; β = 0,5). Temps moyen : 3 × 2 = 6 mois.`,
+ formulas:`X ~ Gamma(α, β)   (α forme, β taux)\nE[X]   = α/β\nVar(X) = α/β²\nα=2 : P(X>x) = e^(−βx) · (1 + βx)`,
+ eS:'α/β',vS:'α/β²',use:'Temps cumulé, sévérité des sinistres',
+ tips:[`Gamma(1, β) est exactement l'exponentielle de taux β.`,`Même taux β : Gamma(α₁, β) + Gamma(α₂, β) = Gamma(α₁+α₂, β).`,`Somme de n exponentielles de moyenne m : moyenne n·m, variance n·m².`,`Coefficient de variation = 1/√α : plus α est grand, plus la loi est concentrée et proche d'une cloche.`],
+ trap:`Taux ou échelle ? Avec le taux β, E = α/β. Avec l'échelle θ = 1/β, E = αθ. Regarde la convention de l'énoncé.`,
+ kind:'c',params:[{k:'a',l:'α (forme)',min:1,max:10,step:.5,v:3},{k:'b',l:'β (taux)',min:.2,max:3,step:.1,v:1}],
+ range:p=>[0,(p.a+4*Math.sqrt(p.a))/p.b],
+ f:(p,x)=>x<=0?(p.a===1?p.b:0):Math.exp(p.a*Math.log(p.b)+(p.a-1)*Math.log(x)-p.b*x-lg(p.a)),F:null,
+ mean:p=>p.a/p.b,vr:p=>p.a/(p.b*p.b),
+ gen:[
+  ()=>{const a=rnd([2,3,4,5]),b=rnd([.5,1,2,4]);return{q:`X suit une loi Gamma de forme <b>α = ${a}</b> et de taux <b>β = ${fr(b)}</b>. Calcule <b>E[X]</b>.`,a:a/b,hint:'E[X] = α/β',sol:`E[X] = α/β = ${a}/${fr(b)} = ${fr(a/b)}.`};},
+  ()=>{const a=rnd([2,3,4,5]),b=rnd([.5,1,2,4]);return{q:`X suit une loi Gamma de forme <b>α = ${a}</b> et de taux <b>β = ${fr(b)}</b>. Calcule <b>Var(X)</b>.`,a:a/(b*b),hint:'Var(X) = α/β²',sol:`Var(X) = α/β² = ${a}/${fr(b*b,4)} = ${fr(a/(b*b))}.`};},
+  ()=>{const b=rnd([.5,1,2]),x=rnd([1,2,3]),a=Math.exp(-b*x)*(1+b*x);return{q:`Deux délais indépendants, exponentiels de taux <b>β = ${fr(b)}</b>, s'additionnent : S ~ Gamma(2 ; ${fr(b)}). Calcule <b>P(S > ${x})</b>.`,a,hint:'P(S > x) = e^(−βx) · (1 + βx)',sol:`βx = ${fr(b*x)}. P(S > ${x}) = e^(−${fr(b*x)}) × (1 + ${fr(b*x)}) = ${fr(Math.exp(-b*x),4)} × ${fr(1+b*x)} = ${fr(a,4)}.`};},
+  ()=>{const n=ri(2,6),m=rnd([2,3,4,5]);return{q:`On additionne <b>${n}</b> délais indépendants, chacun exponentiel de moyenne <b>${m} mois</b>. Quel est le délai total moyen, en mois ?`,a:n*m,hint:'Gamma(n, 1/m) : E = n/β = n × m',sol:`La somme est Gamma(${n} ; ${fr(1/m)}). E = ${n}/${fr(1/m)} = ${n*m} mois (= ${n} × ${m}).`};}
+ ],
+ qcm:[
+  {q:`X ~ Gamma(α = 3 ; β = 0,5). Que vaut E[X] ?`,o:['6','1,5','3','0,17'],c:0,e:`E[X] = α/β = 3/0,5 = 6.`},
+  {q:`Avec la même loi Gamma(3 ; 0,5), que vaut Var(X) ?`,o:['12','6','24','1,5'],c:0,e:`Var = α/β² = 3/0,25 = 12.`},
+  {q:`Gamma(1 ; β) est…`,o:[`l'exponentielle de taux β`,'une loi normale','une uniforme','une loi de Poisson'],c:0,e:`Avec α = 1, la densité devient β·e^(−βx).`},
+  {q:`La somme de 4 exponentielles indépendantes de même taux β suit…`,o:['Gamma(4 ; β)','Gamma(1 ; 4β)','Exponentielle(β)','Une normale exacte'],c:0,e:`Même taux : les formes s'additionnent, 4 × 1 = 4.`}
+ ]},
+
+{id:'lognormale',name:'Lognormale',tag:'continue',reco:'ln X est normale, montants asymétriques',
+ idea:`X est lognormale quand son logarithme ln X est normal N(μ, σ²). La loi ne prend que des valeurs positives, elle est asymétrique avec une queue à droite : parfait pour des montants de sinistres.`,
+ ex:`Le coût d'un sinistre habitation : beaucoup de petits montants, quelques gros. Avec ln X ~ N(8 ; 1), le sinistre médian est e⁸ ≈ 2 981 €.`,
+ formulas:`ln X ~ N(μ, σ²)\nP(X ≤ x) = Φ((ln x − μ)/σ)\nMédiane = e^μ\nE[X] = e^(μ + σ²/2)\nVar(X) = (e^(σ²) − 1) · e^(2μ + σ²)`,
+ eS:'e^(μ+σ²/2)',vS:'(e^(σ²)−1)·e^(2μ+σ²)',use:'Montant d\'un sinistre, queue épaisse modérée',
+ tips:[`Toujours passer par le logarithme : P(X ≤ x) = P(ln X ≤ ln x), puis on standardise.`,`Moyenne > médiane : E[X] = médiane × e^(σ²/2), donc la moyenne est tirée vers le haut par les gros sinistres.`,`Le produit de lognormales indépendantes est lognormal (les ln s'additionnent).`],
+ trap:`μ et σ sont les paramètres de ln X, pas ceux de X. L'espérance de X n'est pas e^μ mais e^(μ + σ²/2).`,
+ kind:'c',params:[{k:'m',l:'μ (moyenne de ln X)',min:0,max:4,step:.1,v:1.5},{k:'s',l:'σ (écart-type de ln X)',min:.1,max:1.5,step:.05,v:.6}],
+ range:p=>[0,Math.exp(p.m+2.5*p.s)],f:(p,x)=>x<=0?0:Math.exp(-.5*Math.pow((Math.log(x)-p.m)/p.s,2))/(x*p.s*Math.sqrt(2*Math.PI)),F:(p,x)=>x<=0?0:Phi((Math.log(x)-p.m)/p.s),
+ mean:p=>Math.exp(p.m+p.s*p.s/2),vr:p=>(Math.exp(p.s*p.s)-1)*Math.exp(2*p.m+p.s*p.s),
+ gen:[
+  ()=>{const m=rnd([1,2,3]),s=rnd([.4,.5,.8,1]),a=Math.exp(m+s*s/2);return{q:`Un montant de sinistre X est lognormal avec <b>ln X ~ N(${m} ; ${fr(s)}²)</b>. Calcule <b>E[X]</b>.`,a,hint:'E[X] = exp(μ + σ²/2)',sol:`E[X] = exp(${m} + ${fr(s*s,4)}/2) = exp(${fr(m+s*s/2,4)}) = ${fr(a,3)}.`};},
+  ()=>{const m=rnd([1,2,3,4]),s=rnd([.4,.5,.8,1]),a=Math.exp(m);return{q:`Un montant X est lognormal avec <b>ln X ~ N(${m} ; ${fr(s)}²)</b>. Quelle est la <b>médiane</b> de X ?`,a,hint:'Médiane = e^μ',sol:`P(X ≤ e^μ) = Φ(0) = 0,5, donc la médiane vaut e^${m} = ${fr(a,3)}.`};},
+  ()=>{const m=rnd([1,2,3]),s=rnd([.5,1]),z=rnd([.5,1,1.5,2]),x=Math.round(Math.exp(m+z*s)*100)/100;return{q:`<b>ln X ~ N(${m} ; ${fr(s)}²)</b>. Calcule <b>P(X ≤ ${fr(x,2)})</b>. Table : Φ(0,5)=0,6915 · Φ(1)=0,8413 · Φ(1,5)=0,9332 · Φ(2)=0,9772.`,a:PHI[z],tol:.0015,hint:'z = (ln x − μ)/σ',sol:`ln(${fr(x,2)}) ≈ ${fr(Math.log(x),3)}. z = (${fr(Math.log(x),3)} − ${m})/${fr(s)} ≈ ${fr(z)}. P = Φ(${fr(z)}) = ${fr(PHI[z],4)}.`};},
+  ()=>{const s=rnd([.4,.6,.8,1]),a=Math.exp(s*s/2);return{q:`Pour une loi lognormale, le rapport <b>moyenne / médiane</b> ne dépend que de σ. Calcule-le pour <b>σ = ${fr(s)}</b>.`,a,hint:'E[X] / médiane = e^(σ²/2)',sol:`E[X] = e^(μ+σ²/2) et médiane = e^μ, donc le rapport vaut e^(σ²/2) = e^(${fr(s*s/2,4)}) = ${fr(a,4)}.`};}
+ ],
+ qcm:[
+  {q:`ln X ~ N(2 ; 0,5²). Quelle est la médiane de X ?`,o:['e² ≈ 7,39','e^2,125 ≈ 8,37','2','e⁴'],c:0,e:`La médiane de ln X est 2, donc celle de X est e² ≈ 7,39.`},
+  {q:`Comparée à la médiane, l'espérance d'une lognormale est…`,o:['plus grande','plus petite','égale','impossible à comparer'],c:0,e:`E[X] = médiane × e^(σ²/2), et e^(σ²/2) > 1 : la queue à droite tire la moyenne vers le haut.`},
+  {q:`Pour une lognormale de paramètres (μ, σ), P(X ≤ x) vaut…`,o:['Φ((ln x − μ)/σ)','Φ((x − μ)/σ)','1 − Φ((ln x − μ)/σ)','e^(−x/μ)'],c:0,e:`On prend le log : ln X est normale, puis on standardise.`},
+  {q:`Pour quel type de variable la lognormale est-elle adaptée ?`,o:[`Montant de sinistre positif et asymétrique à droite`,'Nombre de sinistres dans l\'année','Indicateur de sinistre (0 ou 1)','Nombre d\'essais avant le 1er sinistre'],c:0,e:`Variable continue, positive, avec une queue à droite : c'est le profil d'un montant de sinistre.`}
+ ]},
+
+{id:'pareto',name:'Pareto',tag:'continue',reco:'Queue très épaisse, sinistres extrêmes',
+ idea:`Une loi à queue lourde : les très gros montants restent possibles. Au-dessus d'un seuil xₘ, la probabilité décroît comme une puissance (et non comme une exponentielle). Plus α est petit, plus la queue est épaisse.`,
+ ex:`Les sinistres supérieurs à 1 M€ en réassurance : S(x) = (1 000 000/x)^α pour x ≥ 1 000 000 €, avec α autour de 2 pour de l'incendie industriel.`,
+ formulas:`S(x) = P(X>x) = (xₘ/x)^α     x ≥ xₘ\nE[X] = α·xₘ/(α−1)     si α > 1\nVar finie si α > 2\nQuantile : x = xₘ · q^(−1/α)   (P(X>x)=q)\nExcès moyen : E[X−d | X>d] = d/(α−1)`,
+ eS:'α·xₘ/(α−1) si α>1',vS:'finie si α>2',use:'Sinistres extrêmes, réassurance',
+ tips:[`Si α ≤ 1, la moyenne n'existe pas (elle est infinie). Si α ≤ 2, la variance n'existe pas.`,`La survie est une simple puissance : pas de table, pas d'intégrale.`,`L'excès moyen d/(α−1) augmente avec le seuil d : plus la franchise est haute, plus le dépassement moyen est grand. C'est la signature d'une queue lourde.`,`En échelle log-log, ln S(x) est une droite de pente −α.`],
+ trap:`La formule de la moyenne n'a de sens que pour α > 1. Avec α = 0,8, α·xₘ/(α−1) est négatif : c'est un signal que la moyenne est infinie.`,
+ kind:'c',params:[{k:'x',l:'xₘ (seuil)',min:1,max:10,step:.5,v:2},{k:'a',l:'α (indice de queue)',min:.5,max:6,step:.1,v:2.5}],
+ range:p=>[p.x,p.x*8],f:(p,x)=>x<p.x?0:p.a*Math.pow(p.x,p.a)/Math.pow(x,p.a+1),F:(p,x)=>x<p.x?0:1-Math.pow(p.x/x,p.a),
+ mean:p=>p.a>1?p.a*p.x/(p.a-1):Infinity,vr:p=>p.a>2?p.a*p.x*p.x/((p.a-1)*(p.a-1)*(p.a-2)):Infinity,
+ gen:[
+  ()=>{const xm=rnd([1,2,5,10]),al=rnd([1.5,2,3]),x=xm*rnd([2,3,4]),a=Math.pow(xm/x,al);return{q:`Un sinistre suit une loi de Pareto de seuil <b>xₘ = ${xm}</b> et d'indice <b>α = ${fr(al)}</b>. Quelle est la probabilité que le sinistre <b>dépasse ${x}</b> ?`,a,hint:'P(X > x) = (xₘ/x)^α',sol:`P(X > ${x}) = (${xm}/${x})^${fr(al)} = ${fr(xm/x,4)}^${fr(al)} = ${fr(a,4)}.`};},
+  ()=>{const xm=rnd([1,2,5,10]),al=rnd([2,3,4]);return{q:`Pareto de seuil <b>xₘ = ${xm}</b> et d'indice <b>α = ${al}</b>. Calcule le <b>montant moyen</b> E[X].`,a:al*xm/(al-1),hint:'E[X] = α·xₘ/(α−1)',sol:`E[X] = ${al} × ${xm} / (${al} − 1) = ${fr(al*xm/(al-1),3)}.`};},
+  ()=>{const xm=rnd([1,2,5,10]),al=rnd([2,3,4]),q=rnd([.1,.05,.01]),a=xm*Math.pow(q,-1/al);return{q:`Pareto de seuil <b>xₘ = ${xm}</b> et d'indice <b>α = ${al}</b>. Trouve le montant x qui n'est dépassé qu'avec la probabilité <b>${fr(q)}</b> (c'est-à-dire P(X > x) = ${fr(q)}).`,a,hint:'(xₘ/x)^α = q  donc  x = xₘ · q^(−1/α)',sol:`x = ${xm} × ${fr(q)}^(−1/${al}) = ${xm} × ${fr(Math.pow(q,-1/al),4)} = ${fr(a,3)}.`};},
+  ()=>{const al=rnd([2,3,4]),xm=rnd([1,2,5]),d=xm*rnd([2,4,10]);return{q:`Pareto de seuil ${xm} et d'indice <b>α = ${al}</b>. Une franchise est fixée à <b>d = ${d}</b> (avec d ≥ xₘ). Quel est le dépassement moyen E[X − d | X > d] ?`,a:d/(al-1),hint:'E[X − d | X > d] = d/(α−1)',sol:`Excès moyen = d/(α−1) = ${d}/(${al} − 1) = ${fr(d/(al-1),3)}.`};}
+ ],
+ qcm:[
+  {q:`S(x) = (10/x)³ pour x ≥ 10. Que vaut P(X > 20) ?`,o:['0,125','0,5','0,25','0,875'],c:0,e:`(10/20)³ = 0,5³ = 0,125.`},
+  {q:`Une Pareto a pour indice α = 0,8. Que peut-on dire de sa moyenne ?`,o:[`Elle n'existe pas (infinie)`,'Elle vaut 4·xₘ','Elle vaut 0,8·xₘ','Elle vaut xₘ/0,8'],c:0,e:`La moyenne n'est finie que si α > 1.`},
+  {q:`Quand α diminue, la queue de la loi de Pareto…`,o:['s\'épaissit','s\'amincit','ne change pas','disparaît'],c:0,e:`Plus α est petit, plus la survie (xₘ/x)^α décroît lentement : les gros sinistres sont plus probables.`},
+  {q:`Pour quel usage la loi de Pareto est-elle typique ?`,o:[`Modéliser des sinistres extrêmes (réassurance)`,'Compter les sinistres par an','Représenter un oui/non','Modéliser une somme de petits risques'],c:0,e:`Sa queue lourde convient aux très gros sinistres.`}
+ ]}
+];
+/* fonctions de répartition par sommation ou intégration */
+LAWS[1].F=(p,k)=>k<0?0:sumF(j=>LAWS[1].f(p,j),0,Math.min(p.n,Math.floor(k)));
+LAWS[2].F=(p,k)=>k<0?0:sumF(j=>LAWS[2].f(p,j),0,Math.floor(k));
+LAWS[7].F=(p,x)=>x<=0?0:Math.min(1,simpson(t=>LAWS[7].f(p,t),0,x,300));
+const TITLES={bernoulli:'Loi de Bernoulli',binomiale:'Loi binomiale',poisson:'Loi de Poisson',geometrique:'Loi géométrique',uniforme:'Loi uniforme',exponentielle:'Loi exponentielle',normale:'Loi normale',gamma:'Loi Gamma',lognormale:'Loi lognormale',pareto:'Loi de Pareto'};
+const byId=id=>LAWS.find(l=>l.id===id);
+
+/* ======================= PROGRESSION ======================= */
+const KEY='atelier-lois-v1';
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.hist)return s;}catch(e){}return{hist:{},seen:{},exams:[],tot:0,ok:0,streak:0};}
+const D=load();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(D));}catch(e){}}
+const last8=id=>(D.hist[id]||[]).slice(-8);
+const score8=id=>last8(id).reduce((a,b)=>a+b,0);
+const pct=id=>Math.round(score8(id)/8*100);
+const mastered=id=>score8(id)>=7;
+function status(id){if(mastered(id))return['Maîtrisée','good'];return(D.hist[id]||[]).length?['En progression','warn']:['À découvrir','mute'];}
+function record(id,ok){(D.hist[id]=D.hist[id]||[]).push(ok?1:0);D.hist[id]=D.hist[id].slice(-20);D.tot++;if(ok){D.ok++;D.streak++;}else D.streak=0;save();}
+function pips(id){const a=last8(id),h=[];for(let i=0;i<8-a.length;i++)h.push('<i></i>');a.forEach(v=>h.push(`<i class="${v?'on':'off'}"></i>`));return`<span class="pips" aria-label="${score8(id)} bonnes réponses sur les 8 dernières">${h.join('')}</span>`;}
+const overall=()=>Math.round(LAWS.reduce((s,l)=>s+pct(l.id),0)/LAWS.length);
+const nMastered=()=>LAWS.filter(l=>mastered(l.id)).length;
+
+/* ======================= ÉTAT ======================= */
+const S={view:{name:'home'},tab:'learn',ex:{},sess:null};
+
+/* ======================= GRAPHIQUE ======================= */
+function tick(v){return fr(Math.abs(v)<1&&v!==0?+v.toPrecision(2):Math.abs(v)<100?+v.toFixed(2):Math.round(v),3);}
+function exState(L){return S.ex[L.id]||(S.ex[L.id]={p:Object.fromEntries(L.params.map(q=>[q.k,q.v])),tf:.45});}
+function tVal(L,st){const[lo,hi]=L.range(st.p);const raw=lo+st.tf*(hi-lo);return L.kind==='d'?Math.min(hi,Math.max(lo,Math.round(raw))):raw;}
+function chart(L,st){
+  const W=640,H=290,ml=50,mr=14,mt=14,mb=32,pw=W-ml-mr,ph=H-mt-mb,p=st.p,[lo,hi]=L.range(p),t=tVal(L,st);
+  let g='',ys=[];
+  if(L.kind==='d'){for(let k=lo;k<=hi;k++)ys.push(L.f(p,k));}
+  else{for(let i=0;i<=240;i++)ys.push(L.f(p,lo+(hi-lo)*i/240));}
+  const ymax=Math.max(...ys,1e-9)*1.1,Y=v=>mt+ph-v/ymax*ph;
+  [0,.5,1].forEach(r=>{const y=mt+ph-r*ph;g+=`<line x1="${ml}" x2="${W-mr}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${ml-6}" y="${y+4}" text-anchor="end">${tick(ymax/1.1*r*1.1)}</text>`;});
+  if(L.kind==='d'){
+    const n=hi-lo+1,band=pw/n,bw=Math.max(2,band*.72),step=Math.ceil(n/10);
+    for(let k=lo;k<=hi;k++){const x=ml+(k-lo)*band+(band-bw)/2,h=L.f(p,k)/ymax*ph;g+=`<rect x="${x}" y="${mt+ph-h}" width="${bw}" height="${h}" fill="${k<=t?'var(--accent)':'var(--bar)'}"/>`;if((k-lo)%step===0)g+=`<text x="${x+bw/2}" y="${H-12}" text-anchor="middle">${k}</text>`;}
+  }else{
+    const X=x=>ml+(x-lo)/(hi-lo)*pw;let line='',area='';
+    ys.forEach((y,i)=>{const x=lo+(hi-lo)*i/240;line+=(i?'L':'M')+X(x).toFixed(1)+' '+Y(y).toFixed(1);if(x<=t)area+=(area?'L':'M')+X(x).toFixed(1)+' '+Y(y).toFixed(1);});
+    const xt=X(Math.min(t,hi));
+    g+=`<path d="${area} L${xt.toFixed(1)} ${mt+ph} L${X(lo)} ${mt+ph}Z" fill="var(--accent)" fill-opacity=".3" stroke="none"/><path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2.5"/><line x1="${xt}" x2="${xt}" y1="${mt}" y2="${mt+ph}" stroke="var(--accent)" stroke-dasharray="4 3"/>`;
+    for(let i=0;i<=5;i++){const x=lo+(hi-lo)*i/5;g+=`<text x="${X(x)}" y="${H-12}" text-anchor="${i===0?'start':i===5?'end':'middle'}">${tick(x)}</text>`;}
+  }
+  g+=`<line x1="${ml}" x2="${W-mr}" y1="${mt+ph}" y2="${mt+ph}" stroke="var(--muted)"/>`;
+  return`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Graphique de la loi ${L.name}">${g}</svg>`;
+}
+function statsHTML(L,st){
+  const p=st.p,t=tVal(L,st),F=L.F(p,t),sd=Math.sqrt(L.vr(p)),k=L.kind==='d';
+  const tt=k?String(t):fr(t,2);
+  return`<div><small>Espérance E[X]</small><b>${fr(L.mean(p),3)}</b></div><div><small>Variance</small><b>${fr(L.vr(p),3)}</b></div><div><small>Écart-type</small><b>${fr(sd,3)}</b></div><div class="hl"><small>P(X ≤ ${tt})</small><b>${fr(F,4)}</b></div><div class="hl"><small>P(X > ${tt})</small><b>${fr(1-F,4)}</b></div>`;
+}
+function tLabel(L,st){return(L.kind==='d'?'k = ':'x = ')+(L.kind==='d'?tVal(L,st):fr(tVal(L,st),2));}
+
+/* ======================= SESSIONS (quiz, exercices, examen) ======================= */
+function qItem(L,q){const order=shuffle(q.o.map((_,i)=>i));return{kind:'qcm',law:L.id,q:q.q,opts:order.map(i=>q.o[i]),ci:order.indexOf(q.c),e:q.e};}
+function eItem(L,g){return Object.assign({kind:'ex',law:L.id},g());}
+function startSession(title,items,ctx){S.sess={title,items,i:0,score:0,ctx};render();}
+function quizItems(L){return shuffle(L.qcm).map(q=>qItem(L,q));}
+function exoItems(L){const gs=shuffle(L.gen);gs.push(rnd(L.gen));return gs.map(g=>eItem(L,g));}
+function mixItems(laws,n){const items=[];for(let i=0;i<n;i++){const L=laws[i%laws.length];items.push(i%2===0?qItem(L,rnd(L.qcm)):eItem(L,rnd(L.gen)));}return items;}
+function startExam(){const laws=shuffle(LAWS);S.view={name:'session'};startSession('Examen mixte',shuffle(mixItems(laws,10)),{restart:startExam,mixed:true,exam:true});}
+function weakLaws(){return LAWS.slice().sort((a,b)=>pct(a.id)-pct(b.id)||LAWS.indexOf(a)-LAWS.indexOf(b)).slice(0,3);}
+function startWeak(){const w=weakLaws();S.view={name:'session'};startSession('Révision des points faibles : '+w.map(l=>l.name).join(', '),shuffle(mixItems(w,9)),{restart:startWeak,mixed:true});}
+function parseNum(s){const v=parseFloat(String(s).replace(/\s/g,'').replace(',','.'));return isNaN(v)?null:v;}
+function okEx(it,v){const tol=it.tol??Math.max(.001,Math.abs(it.a)*.003);return Math.abs(v-it.a)<=tol;}
+
+function sessionHTML(){
+  const s=S.sess,N=s.items.length;
+  if(s.i>=N)return summaryHTML();
+  const it=s.items[s.i],L=byId(it.law),pc=Math.round(s.i/N*100);
+  let h=`<div class="panel stack"><div class="prog"><span class="chip">${L.name}</span><div class="bar"><div style="width:${pc}%"></div></div><span class="muted mono">${s.i+1}/${N}</span></div>`;
+  if(it.kind==='qcm'){
+    h+=`<p class="q">${it.q}</p><div class="opts">`+it.opts.map((o,i)=>{const c=it.done?(i===it.ci?' right':i===it.pick?' wrong':''):'';return`<button class="opt${c}" data-act="pick" data-i="${i}"${it.done?' disabled':''}><span class="k">${'ABCD'[i]}</span><span>${o}</span></button>`;}).join('')+`</div>`;
+  }else{
+    h+=`<p class="q">${it.q}</p><form class="ans" id="exf" autocomplete="off"><input id="ans" inputmode="decimal" aria-label="Ta réponse" placeholder="Ta réponse" value="${it.val??''}"${it.done?' readonly':''}>${it.done?'':`<button class="btn pri" type="submit">Vérifier</button><button class="btn" type="button" data-act="hint">Indice</button>`}</form>`;
+    if(it.bad)h+=`<p class="muted">Entre un nombre, par exemple 0,25.</p>`;
+    if(it.showHint&&!it.done)h+=`<div class="hint">${it.hint}</div>`;
+  }
+  if(it.done){
+    const ok=it.ok;
+    h+=`<div class="fb ${ok?'ok':'ko'}"><strong>${ok?'Correct':it.kind==='ex'?'Pas tout à fait. Réponse attendue : '+fr(it.a,4):'Pas tout à fait'}</strong><span>${it.kind==='qcm'?it.e:it.sol}</span></div><div class="row"><button class="btn pri" data-act="next">${s.i+1<N?'Question suivante':'Voir le résultat'}</button></div>`;
+  }
+  return h+`</div>`;
+}
+function summaryHTML(){
+  const s=S.sess,N=s.items.length,sc=s.score,r=sc/N;
+  if(s.ctx.exam&&!s.saved){s.saved=true;D.exams.push({d:new Date().toISOString().slice(0,10),s:sc,n:N});D.exams=D.exams.slice(-10);save();}
+  const msg=r>=.9?'Excellent. Cette série est maîtrisée.':r>=.7?'Bien. Encore une série pour verrouiller.':r>=.5?'Les bases sont là. Relis les astuces des lois ratées.':'Reprends la leçon de chaque loi ratée, puis refais la série.';
+  let det='';
+  if(s.ctx.mixed){const m={};s.items.forEach(it=>{(m[it.law]=m[it.law]||[]).push(it.ok);});det=`<div class="stack"><h3>Détail par loi</h3>`+Object.keys(m).map(id=>`<div class="row"><b style="min-width:120px">${byId(id).name}</b>${m[id].map(o=>`<span class="chip ${o?'good':'warn'}">${o?'juste':'à revoir'}</span>`).join('')}</div>`).join('')+`</div>`;}
+  return`<div class="panel stack"><span class="eyebrow">${s.title}</span><div class="big">${sc}<span class="muted"> / ${N}</span></div><p class="lead">${msg}</p>${det}<div class="row"><button class="btn pri" data-act="restart">Recommencer</button><button class="btn" data-act="${s.ctx.law?'tab-learn':'home'}">${s.ctx.law?'Relire la leçon':'Retour à l\'accueil'}</button></div></div>`;
+}
+
+/* ======================= VUES ======================= */
+function railHTML(){
+  const v=S.view;
+  let h=`<div class="brand">Atelier des lois<span>Actuariat</span></div><button data-act="home"${v.name==='home'?' aria-current="page"':''}><span class="nm">Accueil</span></button><button data-act="sheet"${v.name==='sheet'?' aria-current="page"':''}><span class="nm">Fiche récap</span></button><div class="sep"></div>`;
+  LAWS.forEach(l=>{h+=`<button data-act="law" data-id="${l.id}"${v.name==='law'&&v.id===l.id?' aria-current="page"':''}><span class="nm">${l.name}</span>${pips(l.id)}</button>`;});
+  return h;
+}
+function homeHTML(){
+  const next=LAWS.find(l=>!mastered(l.id)),acc=D.tot?Math.round(D.ok/D.tot*100):0,ov=overall();
+  let h=`<div class="hero"><span class="eyebrow">Lois de probabilité pour l'actuariat</span><h1>Maîtrise les 10 lois de l'actuaire</h1><p>Pour chaque loi : une leçon courte avec un exemple d'assurance, un laboratoire à curseurs, un quiz et des exercices chiffrés corrigés. Une loi est maîtrisée quand tu réussis <b>7 des 8</b> dernières réponses.</p></div>`;
+  h+=`<div class="panel stack"><div class="dash"><div class="stat"><b>${nMastered()}/10</b><span>lois maîtrisées</span></div><div class="stat"><b>${ov} %</b><span>maîtrise globale</span></div><div class="stat"><b>${D.tot}</b><span>réponses données</span></div><div class="stat"><b>${acc} %</b><span>de réussite</span></div><div class="stat"><b>${D.streak}</b><span>bonnes réponses d'affilée</span></div></div><div class="bar" role="progressbar" aria-valuenow="${ov}" aria-valuemin="0" aria-valuemax="100"><div style="width:${ov}%"></div></div>
+  <div class="row">${next?`<button class="btn pri" data-act="law" data-id="${next.id}">${D.tot?'Continuer : ':'Commencer par '}${next.name}</button>`:`<span class="chip good">Les 10 lois sont maîtrisées</span>`}<button class="btn" data-act="weak">Réviser mes points faibles</button><button class="btn" data-act="exam">Examen mixte (10 questions)</button></div></div>`;
+  h+=`<div class="stack"><h2>Les 10 lois</h2><div class="laws">`+LAWS.map(l=>{const[st,c]=status(l.id);return`<button class="lawcard" data-act="law" data-id="${l.id}"><div class="row" style="justify-content:space-between"><span class="chip ${c}">${st}</span><span class="muted" style="font-size:13px">${l.tag}</span></div><h3>${l.name}</h3><span class="reco">${l.reco}</span>${pips(l.id)}</button>`;}).join('')+`</div></div>`;
+  if(D.exams.length)h+=`<div class="panel stack"><h3>Derniers examens</h3><div class="row">`+D.exams.slice(-5).reverse().map(e=>`<span class="chip ${e.s/e.n>=.8?'good':'mute'}">${e.d} · ${e.s}/${e.n}</span>`).join('')+`</div></div>`;
+  return h;
+}
+function lawHTML(L){
+  const tabs=[['learn','Comprendre'],['explore','Explorer'],['quiz','Quiz'],['exo','Exercices']];
+  const [st,c]=status(L.id);
+  let h=`<div class="stack"><div class="row"><span class="chip ${c}">${st}</span><span class="chip mute">${L.tag}</span>${pips(L.id)}<span class="muted">${score8(L.id)}/8 · objectif 7</span></div><h2>${TITLES[L.id]}</h2></div>`;
+  h+=`<div class="tabs" role="tablist">`+tabs.map(t=>`<button role="tab" data-act="tab" data-t="${t[0]}" aria-selected="${S.tab===t[0]}">${t[1]}</button>`).join('')+`</div>`;
+  if(S.tab==='learn'){
+    D.seen[L.id]=1;save();
+    h+=`<div class="panel stack"><p class="lead">${L.idea}</p><div class="cols"><div class="stack"><span class="eyebrow">Exemple en assurance</span><p>${L.ex}</p></div><div class="stack"><span class="eyebrow">Comment la reconnaître</span><p><b>${L.reco}.</b></p></div></div><span class="eyebrow">Formules à connaître</span><div class="formulas">${L.formulas}</div><span class="eyebrow">Astuces pour la maîtriser</span><ul class="tips">${L.tips.map(t=>`<li>${t}</li>`).join('')}</ul><div class="trap"><b>Piège classique.</b> ${L.trap}</div><div class="row"><button class="btn pri" data-act="tab-explore">Explorer avec des curseurs</button><button class="btn" data-act="tab-quiz">Passer au quiz</button></div></div>`;
+  }else if(S.tab==='explore'){
+    const stt=exState(L);
+    h+=`<div class="panel stack"><p class="muted">Bouge les curseurs et regarde la forme de la loi changer. La zone colorée représente P(X ≤ seuil).</p><div id="chart">${chart(L,stt)}</div><div class="ctl">`+L.params.map(q=>`<label for="sl-${q.k}">${q.l} <output id="o-${q.k}">${fr(stt.p[q.k],2)}</output><input type="range" id="sl-${q.k}" data-k="${q.k}" min="${q.min}" max="${q.max}" step="${q.step}" value="${stt.p[q.k]}"></label>`).join('')+`<label for="sl-t">Seuil <output id="o-t">${tLabel(L,stt)}</output><input type="range" id="sl-t" min="0" max="1000" step="1" value="${Math.round(stt.tf*1000)}"></label></div><div class="kv" id="kv">${statsHTML(L,stt)}</div></div>`;
+  }else{
+    const key=S.tab,isQ=key==='quiz';
+    if(S.sess&&S.sess.ctx.law===L.id&&S.sess.ctx.tab===key)h+=sessionHTML();
+    else h+=`<div class="panel stack"><p class="lead">${isQ?`Quiz de ${L.qcm.length} questions à choix multiples sur la loi ${L.name}.`:`Série de 5 exercices chiffrés sur la loi ${L.name}, avec correction détaillée.`}</p><p class="muted">${isQ?'Chaque réponse compte dans ta progression. Lis bien l\'explication après chaque question.':'Les paramètres changent à chaque série : impossible de retenir les réponses, il faut savoir faire. Utilise le bouton Indice si tu bloques.'}</p><div class="row"><button class="btn pri" data-act="${isQ?'startq':'starte'}">Commencer</button></div></div>`;
+  }
+  return h;
+}
+function sheetHTML(){
+  const dec=[['Un seul essai oui ou non','Bernoulli'],['Succès parmi n essais','Binomiale'],['Événements sur une période','Poisson'],['Essais jusqu\'au 1er succès','Géométrique'],['Délai sans mémoire','Exponentielle'],['Somme de délais exponentiels','Gamma'],['Montant positif asymétrique','Lognormale'],['Montant extrême, queue lourde','Pareto'],['Somme de nombreux petits risques','Normale'],['Tout équiprobable sur [a, b]','Uniforme']];
+  return`<div class="stack"><span class="eyebrow">Fiche récapitulative</span><h2>Toutes les lois sur une page</h2></div>
+  <div class="panel stack"><h3>Quelle loi choisir ?</h3><ul class="decide">${dec.map(d=>`<li><span>${d[0]}</span><b>→ ${d[1]}</b></li>`).join('')}</ul></div>
+  <div class="panel"><div class="scroll"><table><thead><tr><th>Loi</th><th>Type</th><th>E[X]</th><th>Var(X)</th><th>Usage actuariel</th></tr></thead><tbody>${LAWS.map(l=>`<tr><td><b>${l.name}</b></td><td>${l.tag}</td><td class="m">${l.eS}</td><td class="m">${l.vS}</td><td>${l.use}</td></tr>`).join('')}</tbody></table></div></div>
+  <div class="panel stack"><h3>Cinq réflexes</h3><ul class="tips"><li>Identifie d'abord ce que tu mesures : un comptage (discret) ou une durée, un montant (continu).</li><li>Moyenne = variance : Poisson. Variance plus petite que la moyenne : binomiale. Écart-type = moyenne : exponentielle.</li><li>« Au moins un » : passe par le complémentaire, 1 − P(aucun).</li><li>Normale et lognormale : standardise toujours, puis lis Φ.</li><li>Taux ou moyenne ? λ = 1/moyenne. Convertis le taux dans l'unité de temps de la question.</li></ul></div>`;
+}
+
+function render(){
+  const v=S.view;
+  $('#rail').innerHTML=railHTML();
+  $('#main').innerHTML=v.name==='home'?homeHTML():v.name==='sheet'?sheetHTML():v.name==='session'?(S.sess?`<div class="stack"><span class="eyebrow">${S.sess.title}</span></div>${sessionHTML()}`:''):lawHTML(byId(v.id));
+  const a=$('#ans');if(a&&!a.readOnly)a.focus({preventScroll:true});
+}
+function go(view,tab){S.view=view;S.sess=null;if(tab)S.tab=tab;render();window.scrollTo(0,0);}
+
+/* ======================= ÉVÉNEMENTS ======================= */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const act=b.dataset.act,L=S.view.name==='law'?byId(S.view.id):null,s=S.sess;
+  if(act==='home')go({name:'home'});
+  else if(act==='sheet')go({name:'sheet'});
+  else if(act==='law')go({name:'law',id:b.dataset.id},'learn');
+  else if(act==='tab'){S.tab=b.dataset.t;S.sess=null;render();}
+  else if(act==='tab-learn'){if(L){S.tab='learn';S.sess=null;render();}else go({name:'home'});}
+  else if(act==='tab-explore'){S.tab='explore';render();window.scrollTo(0,0);}
+  else if(act==='tab-quiz'){S.tab='quiz';render();window.scrollTo(0,0);}
+  else if(act==='startq')startSession('Quiz '+L.name,quizItems(L),{law:L.id,tab:'quiz'});
+  else if(act==='starte')startSession('Exercices '+L.name,exoItems(L),{law:L.id,tab:'exo'});
+  else if(act==='weak')startWeak();
+  else if(act==='exam')startExam();
+  else if(act==='restart'&&s){if(s.ctx.law){const l=byId(s.ctx.law),q=s.ctx.tab==='quiz';startSession(s.title,q?quizItems(l):exoItems(l),s.ctx);}else s.ctx.restart();}
+  else if(act==='pick'&&s){const it=s.items[s.i];if(it.done)return;it.done=true;it.pick=+b.dataset.i;it.ok=it.pick===it.ci;if(it.ok)s.score++;record(it.law,it.ok);render();}
+  else if(act==='hint'&&s){const it=s.items[s.i],a=$('#ans');it.val=a?a.value:'';it.showHint=!it.showHint;render();}
+  else if(act==='next'&&s){s.i++;render();}
+});
+document.addEventListener('submit',e=>{
+  if(e.target.id!=='exf')return;e.preventDefault();
+  const s=S.sess,it=s.items[s.i];if(it.done)return;
+  const v=parseNum($('#ans').value);it.val=$('#ans').value;
+  if(v===null){it.bad=true;render();return;}
+  it.bad=false;it.done=true;it.ok=okEx(it,v);if(it.ok)s.score++;record(it.law,it.ok);render();
+});
+document.addEventListener('input',e=>{
+  const t=e.target;if(t.type!=='range'||S.view.name!=='law')return;
+  const L=byId(S.view.id),st=exState(L);
+  if(t.id==='sl-t')st.tf=t.value/1000;
+  else{st.p[t.dataset.k]=parseFloat(t.value);$('#o-'+t.dataset.k).textContent=fr(st.p[t.dataset.k],2);}
+  $('#chart').innerHTML=chart(L,st);$('#kv').innerHTML=statsHTML(L,st);$('#o-t').textContent=tLabel(L,st);
+});
+render();
+})();
+</script>
+
+</body></html>
