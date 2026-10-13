@@ -1,0 +1,576 @@
+<title>Suivi du cours Risque</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@600&display=swap">
+<style>
+/* Concept : un carnet de bord. Bandeau de niveau en haut, liste des 12 séances dessous, une vue détail par séance. */
+:root{
+  --bg:#f2f5f7; --surface:#ffffff; --ink:#13202b; --muted:#5b6b78; --line:#d8e0e6;
+  --accent:#0b6e6e; --accent-ink:#ffffff; --accent-soft:#dcefee;
+  --good:#1d7a46; --good-soft:#dff2e6; --warn:#a35f00; --warn-soft:#fbecd2; --bad:#b3372f; --bad-soft:#f9dedb;
+  --track:#e3e9ee;
+  --font-display:'IBM Plex Serif',Georgia,serif; --font-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif; --font-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1820; --surface:#16222d; --ink:#e6edf2; --muted:#93a4b1; --line:#2a3b49;
+  --accent:#4fc3bd; --accent-ink:#06201f; --accent-soft:#17383a;
+  --good:#5fd08b; --good-soft:#173a27; --warn:#f0b24d; --warn-soft:#3b2d12; --bad:#f08a82; --bad-soft:#40201d;
+  --track:#25343f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1820; --surface:#16222d; --ink:#e6edf2; --muted:#93a4b1; --line:#2a3b49;
+  --accent:#4fc3bd; --accent-ink:#06201f; --accent-soft:#17383a;
+  --good:#5fd08b; --good-soft:#173a27; --warn:#f0b24d; --warn-soft:#3b2d12; --bad:#f08a82; --bad-soft:#40201d;
+  --track:#25343f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.5;padding-inline:16px;padding-block:24px 48px}
+.wrap{max-width:860px;margin-inline:auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--font-display);font-weight:600;margin:0;text-wrap:balance;line-height:1.2}
+h1{font-size:1.7rem} h2{font-size:1.25rem} h3{font-size:1.05rem}
+.eyebrow{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px}
+.hero{display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:center}
+.big{font-size:3.6rem;line-height:1;font-weight:500}
+.big small{font-size:1.4rem;color:var(--muted)}
+.level{display:inline-block;margin-top:8px;padding:2px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:.85rem}
+.gauge{position:relative;height:12px;background:var(--track);border-radius:6px;margin-top:6px}
+.gauge>i{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:6px;transition:width .4s}
+.gauge>b{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--surface)}
+.ticks{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:6px;gap:4px}
+.next{margin-top:14px;font-size:.95rem;color:var(--muted)}
+.next strong{color:var(--ink)}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.tile .v{font-size:1.6rem;font-weight:500}
+.tile .l{font-size:.8rem;color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:8px;padding:0;margin:0;list-style:none}
+.row{width:100%;display:grid;grid-template-columns:2.2rem 1fr auto;gap:4px 14px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+.row:hover{border-color:var(--accent)}
+.row .n{grid-row:span 2;font-family:var(--font-mono);color:var(--muted);font-size:1.1rem}
+.row .t{font-weight:600;min-width:0}
+.row .p{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:.95rem;text-align:right}
+.bar{grid-column:2/4;height:6px;background:var(--track);border-radius:3px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.chip{font-size:.72rem;font-weight:600;padding:1px 8px;border-radius:999px;margin-left:8px;white-space:nowrap}
+.chip.todo{background:var(--track);color:var(--muted)}
+.chip.mid{background:var(--warn-soft);color:var(--warn)}
+.chip.ok{background:var(--good-soft);color:var(--good)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.back{align-self:flex-start}
+.obj{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+.obj:first-of-type{border-top:0}
+.obj input{width:20px;height:20px;margin-top:2px;accent-color:var(--accent);flex:none}
+.q{font-size:1.1rem;font-weight:500;margin:6px 0 14px;text-wrap:pretty}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:var(--good-soft);border-color:var(--good)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.opt:disabled{cursor:default;color:var(--ink)}
+.expl{margin-top:14px;padding:12px 14px;background:var(--accent-soft);border-radius:8px;font-size:.95rem}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.score{font-size:2.6rem;font-weight:500}
+details summary{cursor:pointer;font-weight:600}
+textarea{width:100%;min-height:90px;margin-top:10px;font-family:var(--font-mono);font-size:.78rem;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px}
+.note{font-size:.85rem;color:var(--muted)}
+.method{font-size:.85rem;color:var(--muted)}
+@media (max-width:560px){
+  .hero{grid-template-columns:1fr}
+  .tiles{grid-template-columns:1fr 1fr}
+
+  .big{font-size:3rem}
+}
+@media (prefers-reduced-motion:reduce){.gauge>i{transition:none}}
+
+/* Onglets */
+.tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;font-weight:500;color:var(--muted);margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.tab:hover{color:var(--ink)}
+
+/* Texte du cours */
+.lesson{line-height:1.65;overflow-wrap:anywhere}
+.lesson>:first-child{margin-top:0}
+.lesson h2{margin:28px 0 8px;font-size:1.2rem}
+.lesson h3{margin:26px 0 8px;font-size:1.05rem;padding-top:14px;border-top:1px solid var(--line)}
+.lesson h3:first-child{border-top:0;padding-top:0;margin-top:0}
+.lesson h4{margin:18px 0 6px;font-size:.98rem}
+.lesson p,.lesson ul,.lesson ol{margin:0 0 12px}
+.lesson li{margin-bottom:4px}
+.lesson hr{border:0;border-top:1px solid var(--line);margin:22px 0}
+.lesson blockquote{margin:14px 0;padding:10px 16px;background:var(--accent-soft);border-radius:8px}
+.lesson blockquote p{margin:0}
+.lesson code{font-family:var(--font-mono);font-size:.88em;background:var(--bg);padding:1px 5px;border-radius:4px}
+.lesson pre{overflow-x:auto;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:0 0 14px}
+.lesson pre code{background:none;padding:0;font-size:.82rem;line-height:1.5}
+.scroll{overflow-x:auto;margin:0 0 14px}
+.lesson table{border-collapse:collapse;font-size:.9rem;min-width:100%}
+.lesson th,.lesson td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+.lesson th{background:var(--bg);font-weight:600;white-space:nowrap}
+mjx-container{max-width:100%}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;margin:12px 0}
+
+/* Exercices */
+.ex{display:flex;flex-direction:column;gap:12px}
+.ex .md p{margin:0 0 8px}
+.answer{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 10px}
+.answer label{flex-basis:100%;font-size:.85rem;color:var(--muted);font-weight:500}
+.answer input{font:inherit;font-family:var(--font-mono);background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 12px;width:min(100%,220px)}
+.fb{margin:0;min-height:1.2em;font-size:.92rem}
+.fb.good{color:var(--good);font-weight:600}
+.fb.bad{color:var(--bad);font-weight:600}
+.ex .expl{margin-top:0;overflow-wrap:anywhere}
+.ex .expl p{margin:0 0 8px}
+
+</style>
+
+<div class="wrap" id="app"></div>
+
+<script>window.MathJax={svg:{fontCache:'local'},options:{enableMenu:false},startup:{typeset:false}};</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js"></script>
+<script>
+const LESSONS=["### 1.1 L'idée centrale\nUn assureur vend une promesse : payer **si** un événement aléatoire se produit. La statistique du risque répond à trois questions :\n\n- **Combien** de sinistres ? (*fréquence*, variable $N$)\n- **De quel montant** chacun ? (*sévérité*, variables $X_1, X_2, \\dots$)\n- **Combien au total**, et avec quelle chance de dépasser un seuil ? (*charge totale* $S$)\n\n> **Image à retenir** : un dé qui décide *si* vous avez un accident, puis un second dé qui décide *combien ça coûte*. L'actuaire étudie les deux dés ensemble.\n\n### 1.2 Rappels express\n\n| Notion | Définition | Pourquoi c'est utile |\n|---|---|---|\n| Fonction de répartition | $F(x)=P(X\\le x)$ | probabilité de rester sous un budget |\n| Fonction de survie | $\\bar F(x)=1-F(x)$ | probabilité de **dépasser** un seuil (clé en réassurance) |\n| Espérance | $E[X]$ | prime pure |\n| Variance | $\\mathrm{Var}(X)=E[X^2]-E[X]^2$ | incertitude autour de la moyenne |\n| Quantile | $q_\\alpha=\\inf\\{x: F(x)\\ge\\alpha\\}$ | VaR |\n| Coef. de variation | $CV=\\sigma/\\mu$ | risque **relatif**, comparable entre portefeuilles |\n\n### 1.3 Exemple « zéro » : la loi des grands nombres, en action\nUn contrat coûte en moyenne 500 € avec un écart-type de 2 000 € (beaucoup de contrats à 0, quelques gros sinistres).\nPour un portefeuille de $n$ contrats indépendants, le coût moyen par contrat a pour écart-type $2000/\\sqrt n$ :\n\n| $n$ | écart-type du coût moyen | CV |\n|---|---|---|\n| 1 | 2 000 € | 400 % |\n| 100 | 200 € | 40 % |\n| 10 000 | 20 € | 4 % |\n\n**Message** : la **mutualisation** réduit le risque *relatif*, jamais le risque *absolu* (l'écart-type de la somme croît en $\\sqrt n$).", "### 2.1 Les trois lois à connaître\n\n| Loi | $P(N=k)$ | $E[N]$ | $\\mathrm{Var}(N)$ | Quand l'utiliser |\n|---|---|---|---|---|\n| **Poisson**($\\lambda$) | $e^{-\\lambda}\\lambda^k/k!$ | $\\lambda$ | $\\lambda$ | cas de base, population homogène |\n| **Binomiale négative**($r,p$) | $\\binom{k+r-1}{k}p^r(1-p)^k$ | $r(1-p)/p$ | $r(1-p)/p^2$ | **surdispersion** ($\\mathrm{Var}>E$) |\n| **Binomiale**($n,p$) | $\\binom nk p^k(1-p)^{n-k}$ | $np$ | $np(1-p)$ | sous-dispersion, $n$ fixé |\n\nRègle pratique : le rapport **Var / Moyenne** est le premier diagnostic.\n- ≈ 1 → Poisson ; > 1 → binomiale négative ; < 1 → binomiale.\n\n### 2.2 Pourquoi la surdispersion ? (intuition)\nDans un portefeuille réel, **tous les assurés n'ont pas le même risque** : un conducteur prudent a $\\lambda=0{,}05$, un conducteur à risque $\\lambda=0{,}40$. Mélangez des Poisson de paramètres différents (avec $\\lambda\\sim\\text{Gamma}$) et vous obtenez exactement une **binomiale négative**. C'est le « Poisson-Gamma ».\n\n### 2.3 Exemple chiffré (1 000 contrats, 1 an)\n\n| Nb sinistres | 0 | 1 | 2 | 3 | 4 |\n|---|---|---|---|---|---|\n| Effectif | 860 | 120 | 15 | 4 | 1 |\n\n- Moyenne : $\\bar n=(120+2\\cdot15+3\\cdot4+4\\cdot1)/1000=0{,}166$\n- $E[N^2]$ empirique $=(120+4\\cdot15+9\\cdot4+16\\cdot1)/1000=0{,}232$\n- Variance : $0{,}232-0{,}166^2\\approx0{,}204$\n- **Var/Moyenne ≈ 1,23 > 1** → soupçon de surdispersion.\n\nPoisson(0,166) prédit $P(N=0)=e^{-0{,}166}\\approx0{,}847$, soit 847 contrats sans sinistre (observé : 860).\n\n**Ajustement par la méthode des moments** de la binomiale négative :\n$$\\hat r=\\frac{m^2}{v-m}=\\frac{0{,}0276}{0{,}0384}\\approx0{,}72,\\qquad \\hat p=\\frac{m}{v}\\approx0{,}81.$$\nLe faible $\\hat r$ traduit une forte hétérogénéité du portefeuille.\n\n### 2.4 Test d'adéquation du $\\chi^2$\n$$\\chi^2=\\sum_k\\frac{(O_k-E_k)^2}{E_k}$$\nDegrés de liberté : (nb de classes) − 1 − (nb de paramètres estimés). Regrouper les classes à faible effectif théorique (< 5).", "### 3.1 Catalogue de lois\n\n| Loi | Densité / survie | Queue | Usage typique |\n|---|---|---|---|\n| **Exponentielle**($\\theta$) | $\\bar F=e^{-x/\\theta}$ | légère | cas pédagogique |\n| **Gamma**($a,\\theta$) | | légère à modérée | sinistres matériels courants |\n| **Log-normale**($\\mu,\\sigma$) | $\\ln X\\sim N(\\mu,\\sigma^2)$ | modérée-lourde | auto, incendie |\n| **Weibull**($k,\\lambda$) | $\\bar F=e^{-(x/\\lambda)^k}$ | selon $k$ | durées, sinistres |\n| **Pareto**($\\alpha,x_m$) | $\\bar F=(x_m/x)^\\alpha$, $x\\ge x_m$ | **lourde** | grands sinistres, RC |\n\n### 3.2 Queue légère vs queue lourde\nUne loi est **à queue lourde** si $\\bar F$ décroît comme une puissance (Pareto) plutôt qu'exponentiellement.\n- Pareto d'indice $\\alpha$ : l'espérance existe si $\\alpha>1$, la variance si $\\alpha>2$.\n- **Conséquence concrète** : avec $\\alpha\\le 2$, la variance est infinie, la moyenne empirique converge très lentement et un seul sinistre peut dominer le portefeuille.\n\n### 3.3 Exemple : le sinistre « moyen » ment\nDeux lois de même moyenne $1\\,500$ € :\n- Exponentielle : $P(X>10\\,000)=e^{-10000/1500}\\approx0{,}13\\ \\%$\n- Pareto($\\alpha=3$, $x_m=1\\,000$) : $P(X>10\\,000)=(1000/10000)^3=0{,}10\\ \\%$ ; mais $P(X>100\\,000)=10^{-6}$ contre $e^{-66{,}7}\\approx0$ pour l'exponentielle.\n\nÀ moyenne égale, **ce sont les queues qui différencient les risques**.\n\n### 3.4 Troncature et censure\n- **Franchise** $d$ : on n'observe que $X>d$ (données *tronquées à gauche*). Il faut ajuster sur la loi conditionnelle $f(x)/\\bar F(d)$.\n- **Plafond** $L$ : les montants sont *censurés à droite*. La vraisemblance contient $\\bar F(L)$ pour ces observations.", "### 4.1 Méthode des moments vs maximum de vraisemblance\n\n| | Moments | Maximum de vraisemblance (MV) |\n|---|---|---|\n| Principe | égaler moments théoriques et empiriques | maximiser $\\prod f(x_i;\\theta)$ |\n| Avantage | simple, rapide | efficace, propriétés asymptotiques |\n| Limite | instable pour queues lourdes | optimisation numérique parfois |\n\n### 4.2 Exemple : MV de la log-normale (formules fermées)\nPour $x_1,\\dots,x_n$ :\n$$\\hat\\mu=\\frac1n\\sum\\ln x_i,\\qquad \\hat\\sigma^2=\\frac1n\\sum(\\ln x_i-\\hat\\mu)^2.$$\n\nDonnées (en k€) : 2, 3, 5, 8, 12. Alors $\\ln x$ = 0,693 ; 1,099 ; 1,609 ; 2,079 ; 2,485.\n$\\hat\\mu\\approx1{,}593$ ; $\\hat\\sigma^2\\approx0{,}437$ ($\\hat\\sigma\\approx0{,}66$).\nMoyenne théorique : $e^{\\hat\\mu+\\hat\\sigma^2/2}\\approx e^{1{,}81}\\approx6{,}1$ k€ (moyenne empirique : 6 k€ ✓).\n\n### 4.3 Outils graphiques et tests\n1. **Histogramme / fonction de répartition empirique** superposés à la loi ajustée.\n2. **QQ-plot** : points alignés sur la droite $y=x$ ⇒ bonne adéquation. Une courbure en queue ⇒ mauvaise modélisation des extrêmes.\n3. **Kolmogorov-Smirnov** : $D=\\sup_x|F_n(x)-F(x)|$. Attention : p-values biaisées si les paramètres sont estimés sur les mêmes données.\n4. **Anderson-Darling** : donne plus de poids aux queues.\n5. **Critères d'information** pour comparer des modèles :\n$$AIC=2k-2\\ln L,\\qquad BIC=k\\ln n-2\\ln L.$$\nPlus petit = meilleur ; BIC pénalise davantage la complexité.\n\n### 4.4 Mini-TP Python (à compléter en séance)\n\n```python\nimport numpy as np\nfrom scipy import stats\n\nrng = np.random.default_rng(42)\nx = stats.lognorm.rvs(s=0.9, scale=np.exp(7.0), size=2000, random_state=rng)\n\n# Ajustement de trois lois candidates (loc fixé à 0)\ncands = {\"lognorm\": stats.lognorm, \"gamma\": stats.gamma, \"weibull\": stats.weibull_min}\nfor name, law in cands.items():\n    params = law.fit(x, floc=0)\n    ll = np.sum(law.logpdf(x, *params))\n    aic = 2 * (len(params) - 1) - 2 * ll   # loc fixé : un paramètre de moins\n    ks = stats.kstest(x, name if name != \"weibull\" else \"weibull_min\", args=params)\n    print(f\"{name:8s}  AIC={aic:10.1f}  KS={ks.statistic:.4f}\")\n```\n**Questions** : quelle loi gagne ? Est-ce attendu ? Refaire avec un échantillon Pareto : que se passe-t-il ?", "### 5.1 Définition\n$$S=\\sum_{i=1}^{N}X_i\\quad(S=0\\text{ si }N=0)$$\nHypothèses : les $X_i$ sont **i.i.d.**, **indépendants de $N$**.\n\n### 5.2 Moments (formules à connaître par cœur)\n$$E[S]=E[N]\\,E[X]$$\n$$\\mathrm{Var}(S)=E[N]\\,\\mathrm{Var}(X)+\\mathrm{Var}(N)\\,E[X]^2$$\n\n**Lecture** : le premier terme = incertitude sur les *montants*, le second = incertitude sur le *nombre*.\n\n**Cas Poisson composé** ($N\\sim\\text{Poisson}(\\lambda)$) : $\\mathrm{Var}(S)=\\lambda E[X^2]$.\n\n### 5.3 Exemple complet\n$N\\sim\\text{Poisson}(100)$ sinistres par an, $X\\sim\\text{Exp}$ de moyenne 2 000 € ($E[X^2]=2\\cdot2000^2=8\\cdot10^6$).\n\n- $E[S]=100\\times2000=200\\,000$ €\n- $\\mathrm{Var}(S)=100\\times8\\cdot10^6=8\\cdot10^8$ ⇒ $\\sigma_S\\approx28\\,284$ €\n- $CV\\approx14{,}1\\ \\%$\n\n**Approximation normale** du quantile à 99,5 % :\n$$200\\,000+2{,}576\\times28\\,284\\approx272\\,900\\text{ €}.$$\nLe **besoin de capital** (au-dessus de la prime pure) est donc d'environ 72 900 €, soit 36 % de la charge moyenne.\n\n> **Piège** : l'approximation normale sous-estime les queues quand la distribution est asymétrique. Alternatives : **Gamma translatée**, **Normal-Power**, ou **calcul exact** (Panjer, FFT, simulation).\n\n### 5.4 Stabilité par addition (propriétés utiles)\n- Somme de Poisson composés indépendants (même loi de sévérité) = Poisson composé de paramètre $\\sum\\lambda_j$.\n- Le portefeuille de $m$ contrats Poisson($\\lambda_0$) est Poisson($m\\lambda_0$) : on peut raisonner au niveau du portefeuille.", "### 6.1 Principe\nPour une sévérité **discrète** (en multiples d'une unité monétaire, $f_j=P(X=j)$) et une fréquence de la classe $(a,b,0)$ (Poisson, binomiale, binomiale négative), la récurrence\n$$g_0=P(S=0),\\qquad g_k=\\frac{1}{1-af_0}\\sum_{j=1}^{k}\\Big(a+\\frac{bj}{k}\\Big)f_j\\,g_{k-j}$$\névite toute convolution.\n\n**Cas Poisson($\\lambda$)** : $a=0$, $b=\\lambda$ :\n$$g_0=e^{-\\lambda(1-f_0)},\\qquad g_k=\\frac{\\lambda}{k}\\sum_{j=1}^{k}j\\,f_j\\,g_{k-j}.$$\n\n### 6.2 Exemple détaillé\n$\\lambda=2$ ; sévérité en milliers d'euros : $f_1=0{,}6$, $f_2=0{,}4$ (donc $f_0=0$).\n\n- $g_0=e^{-2}=0{,}1353$\n- $g_1=2\\cdot1\\cdot0{,}6\\cdot g_0=0{,}1624$\n- $g_2=\\frac22\\,(1\\cdot0{,}6\\,g_1+2\\cdot0{,}4\\,g_0)=0{,}0974+0{,}1083=0{,}2057$\n- $g_3=\\frac23\\,(0{,}6\\,g_2+0{,}8\\,g_1)=\\frac23(0{,}1234+0{,}1299)=0{,}1689$\n\nVérification : $E[S]=\\lambda E[X]=2\\times1{,}4=2{,}8$ k€. En poursuivant la récurrence, on retrouve cette moyenne.\n**Interprétation** : $P(S=3\\text{ k€})\\approx16{,}9\\ \\%$.", "### 7.1 Définitions\n- **Value-at-Risk** : $\\mathrm{VaR}_\\alpha(L)=\\inf\\{x: P(L\\le x)\\ge\\alpha\\}$.\n  « Avec probabilité $\\alpha$, la perte ne dépassera pas ce montant. »\n- **Tail-VaR** (Expected Shortfall) : $\\mathrm{TVaR}_\\alpha(L)=\\dfrac1{1-\\alpha}\\displaystyle\\int_\\alpha^1\\mathrm{VaR}_u(L)\\,du$.\n  « Perte moyenne **dans les cas où** on dépasse la VaR. »\n\nCadre réglementaire : Solvabilité II utilise la VaR à 99,5 % sur 1 an ; Bâle / SST utilisent l'ES / TVaR.\n\n### 7.2 Exemple discret (pour *voir* la différence)\n| Perte | 0 | 1 000 | 10 000 |\n|---|---|---|---|\n| Probabilité | 90 % | 9 % | 1 % |\n\n- $\\mathrm{VaR}_{95\\%}=1\\,000$ ; $\\mathrm{VaR}_{99\\%}=1\\,000$\n- $\\mathrm{TVaR}_{99\\%}=10\\,000$\n- $\\mathrm{TVaR}_{95\\%}=\\dfrac{0{,}01\\times10\\,000+0{,}04\\times1\\,000}{0{,}05}=2\\,800$\n\n**La VaR à 99 % dit « 1 000 » ; la TVaR révèle qu'au-delà, c'est 10 000.** La VaR ignore la gravité de ce qui se passe après le seuil.\n\n### 7.3 Formules fermées (exponentielle de moyenne $\\theta$)\n$$\\mathrm{VaR}_\\alpha=-\\theta\\ln(1-\\alpha),\\qquad \\mathrm{TVaR}_\\alpha=\\mathrm{VaR}_\\alpha+\\theta.$$\nPour $\\theta=1\\,000$ et $\\alpha=99\\ \\%$ : VaR = 4 605 ; TVaR = 5 605.\n\n### 7.4 Mesures cohérentes (Artzner et al., 1999)\nUne mesure $\\rho$ est **cohérente** si elle vérifie :\n1. **Monotonie** : $L_1\\le L_2\\Rightarrow\\rho(L_1)\\le\\rho(L_2)$\n2. **Invariance par translation** : $\\rho(L+c)=\\rho(L)+c$\n3. **Homogénéité positive** : $\\rho(\\lambda L)=\\lambda\\rho(L)$\n4. **Sous-additivité** : $\\rho(L_1+L_2)\\le\\rho(L_1)+\\rho(L_2)$ (*la diversification ne peut pas augmenter le risque*)\n\nTVaR est cohérente ; **VaR ne l'est pas** (en général, elle n'est pas sous-additive).\n\n### 7.5 Contre-exemple classique : VaR non sous-additive\nDeux obligations indépendantes : chacune perd 100 avec probabilité 4 %, sinon 0.\n- Pour chacune : $\\mathrm{VaR}_{95\\%}=0$ (car $P(L=0)=96\\%\\ge95\\%$).\n- Pour la somme : $P(S=0)=0{,}96^2=92{,}16\\ \\%<95\\%$ ⇒ $\\mathrm{VaR}_{95\\%}(S)=100>0+0$.\n\nLa VaR de la somme dépasse la somme des VaR : **elle décourage la diversification**.\n\n### 7.6 Estimation empirique et backtesting\n- Estimation : quantile empirique d'un échantillon simulé ou historique.\n- **Backtesting** : compter les exceptions (pertes > VaR). À 99 %, sur 250 jours on attend 2,5 exceptions ; test de Kupiec sur la binomiale($250$, $1\\%$).", "### 8.1 Pourquoi un chapitre dédié ?\nLes lois classiques sont ajustées sur le **centre** des données ; or le capital se joue dans la **queue**. La théorie des valeurs extrêmes (TVE) modélise *directement* la queue.\n\n### 8.2 Deux approches\n1. **Maxima par blocs** : le maximum annuel converge vers une loi **GEV** (Fisher-Tippett).\n2. **Dépassements de seuil (POT)** : au-dessus d'un seuil $u$ élevé, les excès $Y=X-u$ suivent approximativement une **loi de Pareto généralisée (GPD)** (théorème de Pickands-Balkema-de Haan) :\n$$G_{\\xi,\\sigma}(y)=1-\\Big(1+\\xi\\frac y\\sigma\\Big)^{-1/\\xi},\\quad\\xi\\ne0.$$\n\nL'**indice de queue** $\\xi$ résume tout :\n- $\\xi>0$ : queue lourde (Pareto), $\\alpha=1/\\xi$ ;\n- $\\xi=0$ : queue exponentielle ;\n- $\\xi<0$ : support borné.\n\n### 8.3 Choix du seuil : le compromis biais-variance\n- Seuil trop bas → l'approximation GPD est mauvaise (biais).\n- Seuil trop haut → trop peu d'observations (variance).\n- Outils : **mean excess plot** (linéaire croissant ⇒ Pareto), **stabilité de $\\hat\\xi$** en fonction de $u$.\n\n### 8.4 Estimateur de Hill\nPour $\\xi>0$, avec $X_{(1)}\\le\\dots\\le X_{(n)}$ :\n$$\\hat\\xi_k=\\frac1k\\sum_{i=1}^{k}\\ln\\frac{X_{(n-i+1)}}{X_{(n-k)}}.$$\n\n### 8.5 VaR et TVaR extrêmes\nAvec $N_u$ dépassements parmi $n$ observations :\n$$\\widehat{\\mathrm{VaR}}_p=u+\\frac{\\hat\\sigma}{\\hat\\xi}\\Big[\\Big(\\tfrac{n}{N_u}(1-p)\\Big)^{-\\hat\\xi}-1\\Big],$$\n$$\\widehat{\\mathrm{TVaR}}_p=\\frac{\\widehat{\\mathrm{VaR}}_p}{1-\\hat\\xi}+\\frac{\\hat\\sigma-\\hat\\xi u}{1-\\hat\\xi}\\quad(\\hat\\xi<1).$$\n\n**Remarque** : si $\\xi\\ge1$, la TVaR est infinie : le risque est **non assurable** sans plafond.", "### 9.1 Le piège de la corrélation\nLa corrélation linéaire $\\rho$ ne mesure que la dépendance **linéaire** et ne capture pas le fait que, **en crise, tout s'effondre ensemble**.\nExemple : $X\\sim N(0,1)$ et $Y=X^2$ sont totalement dépendants mais $\\mathrm{Corr}(X,Y)=0$.\n\n### 9.2 Théorème de Sklar\nToute loi conjointe se décompose en **marginales** + **copule** :\n$$F(x_1,\\dots,x_d)=C\\big(F_1(x_1),\\dots,F_d(x_d)\\big).$$\nLa copule $C$ contient *toute* l'information de dépendance, indépendamment des marginales.\n\n### 9.3 Copules usuelles\n\n| Copule | Dépendance de queue | Usage |\n|---|---|---|\n| Gaussienne | **aucune** | modèle de référence (et critiqué en 2008) |\n| Student-$t$ | symétrique, haut et bas | marchés financiers, événements joints |\n| Clayton | **queue basse** | pertes simultanées sévères |\n| Gumbel | **queue haute** | événements extrêmes joints |\n\n### 9.4 Mesures de dépendance par rangs\n- **Tau de Kendall** $\\tau$ et **rho de Spearman** : invariants par transformations croissantes, directement liés à la copule.\n- Pour Clayton : $\\theta=2\\tau/(1-\\tau)$. Un $\\tau=0{,}5$ donne $\\theta=2$.\n\n### 9.5 Illustration par simulation\nSimuler 1 000 couples avec la même corrélation (0,6) via copule gaussienne puis Student ($\\nu=4$). Les deux nuages ont même corrélation mais le second présente nettement **plus de points extrêmes joints** : à corrélation égale, la sévérité d'un événement catastrophe dépend de la copule.", "### 10.1 Les traités de base\n\n| Traité | Part cédée | Commentaire |\n|---|---|---|\n| **Quote-part** | $(1-k)\\cdot X$ | proportionnel, partage prime et sinistres |\n| **Excédent de sinistre (XS)** | $\\min\\{(X-d)_+,\\,L\\}$ | non proportionnel, protège de chaque gros sinistre |\n| **Stop-loss** | $(S-a)_+$ | protège la charge totale annuelle |\n\n### 10.2 Prime pure d'un excédent de sinistre\n$$E[(X-d)_+]=\\int_d^\\infty\\bar F(x)\\,dx.$$\n\n**Exemple Pareto** ($\\alpha=3$, $x_m=1\\,000$, priorité $d=5\\,000$) :\n$$E[(X-d)_+]=\\frac{x_m^\\alpha\\,d^{1-\\alpha}}{\\alpha-1}=\\frac{10^9\\times5000^{-2}}{2}=20\\text{ €}.$$\n\n- Moyenne d'un sinistre : 1 500 € ; excès moyen par sinistre : 20 €.\n- Probabilité de toucher la couverture : $(1/5)^3=0{,}8\\ \\%$.\n- Avec $\\lambda=100$ sinistres/an : prime pure du réassureur $=100\\times20=2\\,000$ € /an.\n\n**Lecture** : l'assureur cède une part infime de la charge moyenne, mais élimine l'essentiel de la **volatilité**, car l'excédent coûte peu et capte les gros sinistres.\n\n### 10.3 Stop-loss et ordre convexe\nParmi toutes les couvertures de même coût moyen, le **stop-loss minimise la variance** de la rétention (théorème de Vajda / ordre stop-loss). C'est la couverture « optimale » pour la réduction de variance.", "### 11.1 Structure d'un tarif\n$$\\text{Prime commerciale}=\\underbrace{E[S]}_{\\text{prime pure}}+\\underbrace{\\text{chargement de sécurité}}_{\\text{p.ex. }\\theta E[S]\\text{ ou }\\kappa\\,\\sigma_S}+\\underbrace{\\text{frais, marge}}_{}$$\nPrincipes de calcul : espérance, variance ($E+\\beta\\mathrm{Var}$), écart-type, exponentiel.\n\n### 11.2 Tarification a priori : les GLM (aperçu)\n- **Fréquence** : régression de Poisson, lien log, avec **offset** $\\ln(\\text{exposition})$.\n- **Sévérité** : régression Gamma, lien log.\n- Prime pure $=$ fréquence $\\times$ coût moyen.\n\nLien log ⇒ modèle **multiplicatif** : $\\lambda_i=\\lambda_0\\times e^{\\beta_{\\text{jeune}}}\\times e^{\\beta_{\\text{urbain}}}\\times\\cdots$\n\n### 11.3 Tarification a posteriori : la crédibilité de Bühlmann\nUn assuré a-t-il son *propre* niveau de risque ? On mélange expérience individuelle et moyenne collective :\n$$\\hat\\mu_i=Z\\,\\bar X_i+(1-Z)\\,\\mu,\\qquad Z=\\frac{n}{n+k},\\qquad k=\\frac{E[\\sigma^2(\\Theta)]}{\\mathrm{Var}(\\mu(\\Theta))}.$$\n\n- $E[\\sigma^2(\\Theta)]$ = variance **intra** assuré (bruit) ;\n- $\\mathrm{Var}(\\mu(\\Theta))$ = variance **inter** assurés (vrai signal).\n\n### 11.4 Exemple chiffré\nVariance intra $=400$, variance inter $=100$ ⇒ $k=4$.\nUn assuré observé $n=8$ ans, charge moyenne $\\bar X=50$, charge moyenne du portefeuille $\\mu=40$ :\n$$Z=\\frac{8}{8+4}=\\frac23,\\qquad \\hat\\mu=\\frac23\\cdot50+\\frac13\\cdot40\\approx46{,}7.$$\n**Intuition** : plus l'historique est long ($n$ grand) ou plus les assurés diffèrent réellement ($k$ petit), plus on fait confiance à l'historique individuel.", "### 12.1 Le modèle de Cramér-Lundberg\nRéserve à l'instant $t$ :\n$$U(t)=u+ct-\\sum_{i=1}^{N(t)}X_i,$$\noù $u$ = capital initial, $c$ = taux de prime, $N(t)$ processus de Poisson d'intensité $\\lambda$.\n**Chargement de sécurité** $\\theta$ : $c=(1+\\theta)\\lambda E[X]$.\n\nProbabilité de ruine : $\\psi(u)=P(\\exists t:U(t)<0)$.\n\n### 12.2 Résultats clés\n- **Condition de profit net** : $\\theta>0$, sinon $\\psi(u)=1$.\n- **Inégalité de Lundberg** : $\\psi(u)\\le e^{-Ru}$, où $R>0$ résout $\\lambda\\big(M_X(R)-1\\big)=cR$.\n- **Sinistres exponentiels** (formule exacte) :\n$$\\psi(u)=\\frac1{1+\\theta}\\exp\\Big(-\\frac{\\theta\\,u}{(1+\\theta)\\,\\mu}\\Big).$$\n\n### 12.3 Exemple chiffré\n$\\mu=E[X]=1\\,000$ €, $\\theta=20\\ \\%$, capital $u=10\\,000$ €.\n$$R=\\frac{\\theta}{(1+\\theta)\\mu}=\\frac{0{,}2}{1\\,200}=1{,}667\\cdot10^{-4},\\quad Ru=1{,}667.$$\n- Borne de Lundberg : $e^{-1{,}667}\\approx18{,}9\\ \\%$\n- Probabilité exacte : $\\psi(u)=0{,}189/1{,}2\\approx15{,}7\\ \\%$\n\n**Pour viser $\\psi\\le1\\ \\%$** : $\\exp(-Ru)\\le0{,}012$ ⇒ $u\\ge\\ln(83{,}3)/R\\approx26\\,500$ €.\nLe capital nécessaire est lié au **chargement** : plus $\\theta$ est élevé, plus $R$ est grand et moins il faut de capital.\n\n### 12.4 Limites du modèle\nHypothèses fortes (Poisson stationnaire, pas d'intérêts, pas de dividendes, horizon infini). En pratique : on préfère la ruine à **horizon fini** et la simulation.\n\n---\n\n## Simulation et rééchantillonnage\n\n### 13.1 Monte Carlo pour la charge totale\n\n```python\nimport numpy as np\nrng = np.random.default_rng(1)\n\nn_sim, lam, mean_x = 100_000, 100, 2000\nN = rng.poisson(lam, n_sim)\nS = np.array([rng.exponential(mean_x, k).sum() for k in N])\n\nalpha = 0.995\nvar = np.quantile(S, alpha)\ntvar = S[S >= var].mean()\nprint(f\"E[S]={S.mean():,.0f}  VaR99.5={var:,.0f}  TVaR99.5={tvar:,.0f}\")\n```\n**Questions** : (1) comparer avec l'approximation normale du §5.3 (272 900 €) ; laquelle est la plus fiable et pourquoi ? (2) Quelle est l'erreur d'estimation de la VaR 99,5 % pour $n_{sim}=10^3$, $10^5$ ?\n\n### 13.2 Bootstrap\nRééchantillonner **avec remise** les sinistres observés pour obtenir un intervalle de confiance sur $E[S]$, la VaR ou $\\hat\\xi$ — sans hypothèse de loi. Limite : le bootstrap ne fabrique pas de valeurs plus grandes que le maximum observé (mauvais pour les extrêmes) ⇒ préférer le bootstrap paramétrique ou la GPD.\n\n### 13.3 Risque de modèle\nToujours mesurer :\n- **risque d'estimation** (incertitude sur les paramètres) ;\n- **risque de spécification** (mauvaise famille de lois) ;\n- **risque de processus** (le hasard pur)."];
+const DOCS={"plan": "À la fin du cours, l'étudiant sait :\n\n1. modéliser **fréquence** et **sévérité** des sinistres, et ajuster ces lois à des données ;\n2. calculer la loi (ou les moments) de la **charge totale** d'un portefeuille ;\n3. mesurer un risque (**VaR, TVaR**) et en discuter les limites ;\n4. traiter les **événements extrêmes** (queues lourdes, GPD) ;\n5. comprendre la **dépendance** (copules) et la **réassurance** ;\n6. tarifer (**prime pure, crédibilité**) et évaluer la **probabilité de ruine** ;\n7. valider un modèle par **simulation** et **backtesting**.\n\n| Séance | Thème |\n|---|---|\n| 1 | Qu'est-ce qu'un risque ? Rappels de probabilités |\n| 2 | Modélisation de la fréquence |\n| 3 | Modélisation de la sévérité |\n| 4 | Estimation et tests d'adéquation |\n| 5 | Modèle collectif (charge totale) |\n| 6 | Algorithme de Panjer, approximations |\n| 7 | Mesures de risque : VaR, TVaR |\n| 8 | Valeurs extrêmes (POT, GPD) |\n| 9 | Dépendance et copules |\n| 10 | Réassurance |\n| 11 | Tarification et crédibilité |\n| 12 | Théorie de la ruine, simulation, synthèse |", "eval": "| Composante | Poids |\n|---|---|\n| Contrôle continu : 3 TP rendus (fréquence-sévérité, VaR par simulation, TVE) | 30 % |\n| Projet : étude d'un jeu de données de sinistres (ajustement, charge totale, VaR/TVaR, réassurance) | 30 % |\n| Examen final écrit (2 h) | 40 % |\n\n### Compétences évaluées\n1. Choisir et justifier un modèle (diagnostics, AIC/BIC, QQ-plots).\n2. Calculer correctement moments et quantiles de $S$.\n3. Interpréter VaR/TVaR et critiquer leurs limites.\n4. Communiquer un résultat avec ses incertitudes.", "biblio": "- Denuit, M. & Charpentier, A., *Mathématiques de l'assurance non-vie*, Economica.\n- Klugman, Panjer, Willmot, *Loss Models: From Data to Decisions*.\n- McNeil, Frey, Embrechts, *Quantitative Risk Management*.\n- Embrechts, Klüppelberg, Mikosch, *Modelling Extremal Events*.\n- Charpentier, A. (éd.), *Computational Actuarial Science with R*.\n\n> **Conseil pédagogique** : à chaque séance, partir d'une **question concrète** (« quel capital pour que l'assureur survive 199 années sur 200 ? »), la traiter d'abord par **simulation** pour l'intuition, puis par la **formule** pour la compréhension."};
+/* Chaque question : o[0] est la bonne réponse, l'ordre est mélangé à l'affichage. */
+const CH=[
+{t:"Risque et rappels de probabilités",obj:["Distinguer fréquence, sévérité et charge totale","Calculer espérance, variance, quantile et coefficient de variation","Expliquer l'effet de la mutualisation (division par √n)"],
+ q:[{q:"Un contrat a un écart-type de coût de 2 000 €. Pour 10 000 contrats indépendants, quel est l'écart-type du coût moyen par contrat ?",o:["20 €","200 €","2 000 €","0,2 €"],e:"σ/√n = 2000/100 = 20 €. La mutualisation réduit le risque relatif en 1/√n."},
+    {q:"Le coefficient de variation d'une charge de moyenne μ et d'écart-type σ vaut :",o:["σ/μ","μ/σ","σ²/μ","σ·μ"],e:"CV = σ/μ : c'est un risque relatif, comparable entre portefeuilles de tailles différentes."},
+    {q:"À quoi sert la fonction de survie 1 − F(x) ?",o:["À calculer la probabilité de dépasser un seuil","À calculer l'espérance directement","À estimer la variance","À mesurer la corrélation"],e:"P(X > x) est la quantité clé en réassurance et pour les queues de distribution."}]},
+{t:"Modélisation de la fréquence",obj:["Choisir entre Poisson, binomiale négative et binomiale avec le rapport Var/Moyenne","Expliquer la surdispersion par le mélange Poisson-Gamma","Ajuster une binomiale négative par la méthode des moments"],
+ q:[{q:"Un portefeuille a une moyenne de 0,25 sinistre et une variance de 0,40 par contrat. Quelle loi privilégier ?",o:["Binomiale négative","Poisson","Binomiale","Loi uniforme"],e:"Var > Moyenne : surdispersion, donc binomiale négative."},
+    {q:"Un mélange de lois de Poisson dont le paramètre λ suit une loi Gamma donne :",o:["Une binomiale négative","Une loi normale","Une binomiale","Une exponentielle"],e:"C'est le modèle Poisson-Gamma : il traduit l'hétérogénéité des assurés."},
+    {q:"Avec une fréquence moyenne de 0,166, que vaut P(N = 0) dans un modèle de Poisson ?",o:["≈ 0,847","≈ 0,166","≈ 0,920","≈ 0,500"],e:"P(N=0) = e^(−0,166) ≈ 0,847."}]},
+{t:"Modélisation de la sévérité",obj:["Citer les lois usuelles et la nature de leur queue","Distinguer queue légère et queue lourde","Traiter la troncature (franchise) et la censure (plafond)"],
+ q:[{q:"Pareto d'indice α = 3 et x_m = 1 000. Que vaut E[X] ?",o:["1 500","1 000","3 000","1 333"],e:"E[X] = α·x_m/(α−1) = 3·1000/2 = 1 500."},
+    {q:"Pour une Pareto d'indice α, la variance est finie si :",o:["α > 2","α > 1","α > 0","toujours"],e:"L'espérance existe pour α > 1, la variance pour α > 2."},
+    {q:"Les montants observés sont tronqués à gauche par une franchise d. L'ajustement doit porter sur :",o:["f(x)/(1 − F(d)) pour x > d","f(x) simplement","F(x)·f(x)","1 − F(x)"],e:"On ajuste la loi conditionnelle au fait que X > d."}]},
+{t:"Estimation et validation",obj:["Estimer par moments et par maximum de vraisemblance","Lire un QQ-plot et interpréter Kolmogorov-Smirnov et Anderson-Darling","Comparer des modèles avec AIC et BIC"],
+ q:[{q:"L'estimateur du maximum de vraisemblance de μ pour une log-normale est :",o:["La moyenne des ln(xᵢ)","Le logarithme de la moyenne des xᵢ","La médiane des xᵢ","La variance des xᵢ"],e:"μ̂ = (1/n)·Σ ln xᵢ, et σ̂² est la variance empirique des ln xᵢ."},
+    {q:"Entre deux modèles, lequel retenir selon l'AIC ?",o:["Celui qui a l'AIC le plus petit","Celui qui a l'AIC le plus grand","Celui qui a le plus de paramètres","Celui dont l'AIC est nul"],e:"AIC = 2k − 2 ln L : plus petit, mieux c'est, avec une pénalité sur le nombre de paramètres."},
+    {q:"Sur un QQ-plot, les points s'écartent de la droite en queue. Cela signale :",o:["Une mauvaise modélisation des extrêmes","Un échantillon trop grand","Une variance nulle","Rien de particulier"],e:"Une courbure en queue indique que la loi ajustée décrit mal les grandes valeurs."}]},
+{t:"Le modèle collectif",obj:["Appliquer E[S] et Var(S) du modèle collectif","Calculer un quantile par approximation normale","Connaître les limites de l'approximation normale"],
+ q:[{q:"N ~ Poisson(50) et E[X] = 800. Que vaut E[S] ?",o:["40 000","50 800","16 000","800"],e:"E[S] = E[N]·E[X] = 50 × 800 = 40 000."},
+    {q:"N ~ Poisson(50), E[X] = 800, σ(X) = 400. Que vaut Var(S) ?",o:["4·10⁷","8·10⁶","3,2·10⁷","2·10⁷"],e:"Poisson composé : Var(S) = λ·E[X²] = 50 × (800² + 400²) = 50 × 800 000 = 4·10⁷."},
+    {q:"L'approximation normale de S a tendance à :",o:["Sous-estimer les quantiles élevés quand la loi est asymétrique","Surestimer toujours le risque","Être exacte pour tout λ","Ignorer la moyenne"],e:"La queue réelle est plus lourde que la gaussienne : préférer Gamma translatée, Panjer, FFT ou simulation."}]},
+{t:"Algorithme de Panjer",obj:["Écrire la récurrence de Panjer pour une fréquence de Poisson","Dérouler à la main g₀, g₁, g₂","Citer les conditions d'application"],
+ q:[{q:"Poisson(λ = 2) et sévérité discrète sans masse en 0 (f₀ = 0). Que vaut g₀ = P(S = 0) ?",o:["e⁻² ≈ 0,135","2·e⁻² ≈ 0,271","0,5","e² ≈ 7,39"],e:"g₀ = exp(−λ(1 − f₀)) = e⁻²."},
+    {q:"Avec λ = 2, f₁ = 0,6 et g₀ = 0,1353, que vaut g₁ ?",o:["≈ 0,162","≈ 0,081","≈ 0,270","≈ 0,600"],e:"g₁ = λ·1·f₁·g₀ = 2 × 0,6 × 0,1353 ≈ 0,162."},
+    {q:"Quelles sont les conditions d'application de Panjer ?",o:["Sévérité discrète et fréquence de la classe (a, b, 0)","Sévérité continue quelconque","Fréquence quelconque","Sinistres dépendants"],e:"Poisson, binomiale et binomiale négative vérifient la récurrence P(N=k) = (a + b/k)·P(N=k−1)."}]},
+{t:"Mesures de risque : VaR et TVaR",obj:["Définir VaR et TVaR","Calculer VaR et TVaR d'une loi exponentielle","Énoncer les quatre axiomes de cohérence et le contre-exemple de la VaR"],
+ q:[{q:"X ~ Exp de moyenne 1 000. Que vaut la VaR à 99 % ?",o:["≈ 4 605","≈ 1 000","≈ 2 303","≈ 9 900"],e:"VaR = −θ·ln(1 − α) = 1000 × ln 100 ≈ 4 605."},
+    {q:"Pour la même loi, que vaut la TVaR à 99 % ?",o:["≈ 5 605","≈ 4 605","≈ 4 000","≈ 10 000"],e:"Pour l'exponentielle, TVaR = VaR + θ = 4 605 + 1 000."},
+    {q:"Laquelle de ces mesures n'est pas cohérente en général ?",o:["La VaR","La TVaR","L'Expected Shortfall","La TVaR à 99 %"],e:"La VaR n'est pas sous-additive : deux obligations à 4 % de défaut ont une VaR95 nulle chacune, mais la somme a une VaR95 de 100."}]},
+{t:"Valeurs extrêmes",obj:["Expliquer les deux approches : maxima par blocs et dépassements de seuil","Choisir un seuil (mean excess plot, stabilité de ξ)","Interpréter l'indice de queue ξ et l'estimateur de Hill"],
+ q:[{q:"Dans une GPD, ξ > 0 signifie :",o:["Une queue lourde de type Pareto","Une queue exponentielle","Un support borné","Aucune queue"],e:"ξ > 0 : queue lourde, avec un indice de Pareto α = 1/ξ."},
+    {q:"Choisir un seuil u trop bas provoque :",o:["Un biais (l'approximation GPD est mauvaise)","Trop peu de données","Une variance nulle","Rien"],e:"Compromis biais-variance : seuil bas, biais ; seuil haut, variance."},
+    {q:"Si ξ ≥ 1, la TVaR est :",o:["Infinie","Nulle","Égale à la VaR","Négative"],e:"La formule contient 1/(1 − ξ) : l'espérance de la queue diverge, le risque est non assurable sans plafond."}]},
+{t:"Dépendance et copules",obj:["Énoncer le théorème de Sklar","Comparer copules gaussienne, Student, Clayton et Gumbel","Relier le tau de Kendall au paramètre d'une copule"],
+ q:[{q:"Le théorème de Sklar dit que toute loi conjointe se décompose en :",o:["Marginales et copule","Moyenne et variance","Fréquence et sévérité","Corrélation seule"],e:"F(x₁..x_d) = C(F₁(x₁), …, F_d(x_d))."},
+    {q:"Quelle copule n'a aucune dépendance de queue ?",o:["La copule gaussienne","La copule de Student","La copule de Clayton","La copule de Gumbel"],e:"La gaussienne sous-estime les événements extrêmes joints, d'où les critiques après 2008."},
+    {q:"Pour une copule de Clayton, θ = 2τ/(1 − τ). Que vaut θ si τ = 0,5 ?",o:["2","1","0,5","4"],e:"θ = 2 × 0,5 / 0,5 = 2."}]},
+{t:"Réassurance",obj:["Distinguer quote-part, excédent de sinistre et stop-loss","Calculer la prime pure d'un excédent de sinistre sur une loi de Pareto","Justifier l'optimalité du stop-loss pour réduire la variance"],
+ q:[{q:"À coût moyen égal, quelle couverture minimise la variance de la rétention ?",o:["Le stop-loss","La quote-part","L'excédent de sinistre","Aucune couverture"],e:"Résultat de Vajda : le stop-loss est optimal pour la réduction de variance."},
+    {q:"Sinistres Pareto (α = 3, x_m = 1 000). Probabilité qu'un sinistre dépasse une priorité de 5 000 ?",o:["0,8 %","20 %","8 %","0,2 %"],e:"P(X > 5000) = (1000/5000)³ = 0,008."},
+    {q:"La prime pure d'un excédent de sinistre de priorité d est :",o:["∫ de d à ∞ de (1 − F(x)) dx","F(d)","E[X] − d","d·P(X > d)"],e:"E[(X − d)₊] = ∫_d^∞ (1 − F(x)) dx."}]},
+{t:"Tarification et crédibilité",obj:["Décomposer prime pure, chargement de sécurité et frais","Spécifier un GLM de fréquence et un GLM de sévérité","Calculer le facteur de crédibilité de Bühlmann"],
+ q:[{q:"Dans un modèle de Bühlmann, k = 4 et l'assuré est observé n = 8 ans. Que vaut Z ?",o:["2/3","1/3","1/2","8/4"],e:"Z = n/(n + k) = 8/12 = 2/3."},
+    {q:"Avec Z = 2/3, une moyenne individuelle de 50 et une moyenne collective de 40, la prime est :",o:["≈ 46,7","≈ 45","≈ 43,3","≈ 50"],e:"2/3 × 50 + 1/3 × 40 ≈ 46,7."},
+    {q:"Dans un GLM de Poisson pour la fréquence, l'offset est :",o:["ln(exposition)","L'exposition brute","La variance","Le nombre de sinistres"],e:"Avec le lien log, on ajoute ln(exposition) pour modéliser un taux par unité de risque."}]},
+{t:"Théorie de la ruine",obj:["Écrire le modèle de Cramér-Lundberg","Calculer ψ(u) pour des sinistres exponentiels","Utiliser l'inégalité de Lundberg pour dimensionner le capital"],
+ q:[{q:"Si le chargement de sécurité θ ≤ 0, la probabilité de ruine est :",o:["1","0","0,5","égale à e^(−Ru)"],e:"Sans profit net attendu, la ruine est certaine à horizon infini."},
+    {q:"Sinistres exponentiels de moyenne 1 000, θ = 20 %, u = 10 000. Que vaut ψ(u) ?",o:["≈ 15,7 %","≈ 18,9 %","≈ 1,6 %","≈ 8 %"],e:"ψ(u) = e^(−Ru)/(1 + θ) avec Ru = 1,667 : 0,189/1,2 ≈ 15,7 %. La borne de Lundberg seule donne 18,9 %."},
+    {q:"L'inégalité de Lundberg s'écrit :",o:["ψ(u) ≤ e^(−Ru)","ψ(u) ≥ e^(−Ru)","ψ(u) = Ru","ψ(u) ≤ R/u"],e:"R est le coefficient d'ajustement, solution de λ(M_X(R) − 1) = cR."}]}
+];
+
+/* Exercices de TD : ch = indice de la séance (0 à 11), ans = réponse numérique attendue, tol = tolérance relative. */
+const EX=[
+{ch:0,unit:"%",ans:10,tol:.02,
+ q:String.raw`Un portefeuille compte $n=2\,500$ contrats indépendants. Chaque contrat a un coût moyen de $300$ € et un écart-type de $1\,500$ €. Quel est le **coefficient de variation du coût moyen par contrat** (en %) ?`,
+ sol:String.raw`L'écart-type du coût moyen vaut $\sigma/\sqrt n=1500/\sqrt{2500}=1500/50=30$ €.
+Le coefficient de variation est donc $30/300=10\ \%$.
+
+Sans mutualisation (un seul contrat), il serait de $1500/300=500\ \%$.`},
+{ch:1,unit:"",ans:.417,tol:.02,
+ q:String.raw`Un portefeuille présente une moyenne de $0{,}25$ et une variance de $0{,}40$ sinistres par contrat.
+Après avoir retenu la binomiale négative, estimez son paramètre $r$ par la méthode des moments.`,
+ sol:String.raw`Le rapport variance/moyenne vaut $1{,}6>1$ : il y a surdispersion, donc binomiale négative.
+
+$$\hat r=\frac{m^2}{v-m}=\frac{0{,}0625}{0{,}15}\approx0{,}417,\qquad \hat p=\frac{m}{v}=0{,}625.$$`},
+{ch:2,unit:"%",ans:3.125,tol:.01,
+ q:String.raw`Les sinistres suivent une loi de Pareto d'indice $\alpha=2{,}5$ et de seuil $x_m=500$.
+Quelle est la probabilité (en %) qu'un sinistre dépasse $2\,000$ € ?`,
+ sol:String.raw`$$P(X>2000)=\Big(\frac{500}{2000}\Big)^{2{,}5}=0{,}25^{2{,}5}=0{,}0625\times0{,}5=0{,}03125.$$
+Soit $3{,}125\ \%$.
+
+Pour information, $E[X]=\alpha x_m/(\alpha-1)=833{,}3$ €.`},
+{ch:3,unit:"",ans:3.53,tol:.01,
+ q:String.raw`On observe trois sinistres : $1$, $10$ et $100$ (en k€), supposés log-normaux.
+Calculez l'estimateur du maximum de vraisemblance $\hat\sigma^2$.`,
+ sol:String.raw`Les logarithmes sont $0$ ; $2{,}3026$ ; $4{,}6052$, de moyenne $\hat\mu=2{,}3026$.
+
+$$\hat\sigma^2=\frac13\big[(-2{,}3026)^2+0+2{,}3026^2\big]=\frac{10{,}604}{3}\approx3{,}53.$$
+(Estimateur du maximum de vraisemblance : on divise par $n$, pas par $n-1$.)`},
+{ch:4,unit:"",ans:6325,tol:.01,
+ q:String.raw`$N\sim\text{Poisson}(50)$ et $X$ suit une loi Gamma de moyenne $800$ et d'écart-type $400$.
+Calculez l'**écart-type** de la charge totale $S$.`,
+ sol:String.raw`$E[S]=50\times800=40\,000$.
+
+$E[X^2]=800^2+400^2=800\,000$, donc $\mathrm{Var}(S)=\lambda E[X^2]=50\times800\,000=4\cdot10^7$.
+
+$\sigma_S=\sqrt{4\cdot10^7}\approx6\,325$ et $CV\approx15{,}8\ \%$.`},
+{ch:5,unit:"",ans:.2299,tol:.02,
+ q:String.raw`$N\sim\text{Poisson}(\lambda=1)$ et la sévérité (en k€) vérifie $f_1=0{,}5$, $f_2=0{,}5$.
+Avec l'algorithme de Panjer, calculez $g_2=P(S=2)$.`,
+ sol:String.raw`$g_0=e^{-1}=0{,}3679$.
+
+$g_1=\lambda\,1\,f_1\,g_0=0{,}5\times0{,}3679=0{,}1839$.
+
+$$g_2=\frac{\lambda}{2}\big(1\cdot f_1\,g_1+2\cdot f_2\,g_0\big)=\frac12(0{,}0920+0{,}3679)\approx0{,}2299.$$`},
+{ch:6,unit:"",ans:3454,tol:.01,
+ q:String.raw`Pour $X\sim\text{Exp}$ de moyenne $\theta=500$, calculez la **VaR à 99,9 %**.`,
+ sol:String.raw`$$\mathrm{VaR}_\alpha=-\theta\ln(1-\alpha)=500\times\ln1000\approx3\,454.$$
+Pour mémoire : $\mathrm{VaR}_{99\%}=2\,303$, $\mathrm{TVaR}_{99\%}=2\,803$, $\mathrm{TVaR}_{99{,}9\%}=3\,954$.`},
+{ch:6,unit:"",ans:100,tol:.001,
+ q:String.raw`Deux obligations indépendantes perdent chacune $100$ avec une probabilité de $3\ \%$, sinon $0$.
+Quelle est la VaR à 95 % de la perte totale $S$ ?`,
+ sol:String.raw`$P(S=0)=0{,}97^2=94{,}09\ \%<95\ \%$, donc $\mathrm{VaR}_{95\%}(S)=100$.
+
+Chaque obligation a $\mathrm{VaR}_{95\%}=0$ (car $97\ \%\ge95\ \%$) : $100>0+0$, la VaR n'est pas sous-additive.`},
+{ch:7,unit:"",ans:19.89,tol:.005,
+ q:String.raw`Sur $n=1\,000$ observations, $N_u=50$ dépassent le seuil $u=10$. Les excès suivent une GPD avec $\xi=0{,}5$ et $\sigma=4$.
+Calculez la **VaR à 99 %** par la méthode POT.`,
+ sol:String.raw`$$\widehat{\mathrm{VaR}}_p=u+\frac{\sigma}{\xi}\Big[\Big(\tfrac{n}{N_u}(1-p)\Big)^{-\xi}-1\Big]=10+8\big[0{,}2^{-0{,}5}-1\big]=10+8\times1{,}2361\approx19{,}89.$$`},
+{ch:7,unit:"",ans:37.78,tol:.005,
+ q:String.raw`Avec les données de l'exercice précédent ($u=10$, $\xi=0{,}5$, $\sigma=4$, $\widehat{\mathrm{VaR}}_{99\%}=19{,}89$), calculez la **TVaR à 99 %**.`,
+ sol:String.raw`$$\widehat{\mathrm{TVaR}}_p=\frac{\widehat{\mathrm{VaR}}_p}{1-\xi}+\frac{\sigma-\xi u}{1-\xi}=\frac{19{,}89}{0{,}5}+\frac{4-5}{0{,}5}=39{,}78-2=37{,}78.$$
+Cette formule exige $\xi<1$.`},
+{ch:8,unit:"",ans:1.333,tol:.01,
+ q:String.raw`Pour une copule de Clayton, $\theta=\dfrac{2\tau}{1-\tau}$. Que vaut $\theta$ quand le tau de Kendall est $\tau=0{,}4$ ?`,
+ sol:String.raw`$$\theta=\frac{2\times0{,}4}{1-0{,}4}=\frac{0{,}8}{0{,}6}\approx1{,}333.$$
+Pour $\tau=0{,}5$ on obtient $\theta=2$.`},
+{ch:9,unit:"€",ans:22.7,tol:.02,
+ q:String.raw`Sinistres de Pareto ($\alpha=2{,}5$, $x_m=500$). Quelle est la **prime pure par sinistre** (en €) d'un excédent de sinistre de priorité $d=3\,000$ ?`,
+ sol:String.raw`Espérance : $E[X]=\alpha x_m/(\alpha-1)=833{,}3$ €.
+
+$$E[(X-d)_+]=\frac{x_m^{\alpha}\,d^{1-\alpha}}{\alpha-1}=\frac{500^{2{,}5}}{3000^{1{,}5}\times1{,}5}=333{,}3\times\Big(\frac16\Big)^{1{,}5}\approx22{,}7\text{ €}.$$`},
+{ch:10,unit:"",ans:106.7,tol:.005,
+ q:String.raw`On a $k=10$. Un assuré est observé $5$ ans, avec une charge moyenne de $120$, alors que la moyenne collective est $100$.
+Quelle est sa **prime de crédibilité** ?`,
+ sol:String.raw`$Z=\dfrac{n}{n+k}=\dfrac5{15}=\dfrac13$.
+
+$$\hat\mu=\tfrac13\times120+\tfrac23\times100\approx106{,}7.$$`},
+{ch:11,unit:"%",ans:7.65,tol:.02,
+ q:String.raw`Sinistres exponentiels de moyenne $\mu=1\,000$, chargement $\theta=30\ \%$, capital initial $u=10\,000$.
+Quelle est la probabilité de ruine $\psi(u)$ (en %) ?`,
+ sol:String.raw`$$R=\frac{\theta}{(1+\theta)\mu}=\frac{0{,}3}{1300}=2{,}308\cdot10^{-4},\qquad Ru=2{,}308.$$
+$$\psi(u)=\frac{e^{-Ru}}{1+\theta}=\frac{0{,}0994}{1{,}3}\approx7{,}65\ \%.$$`}
+];
+
+/* ---------- État et stockage (navigateur du lecteur) ---------- */
+const KEY='suivi-risque-m1';
+const blank=()=>({lu:{},obj:{},td:{},quiz:{}});
+let S=blank();
+let view={name:'home'};
+let run=null;
+let mem='';
+const lessonCache={};
+try{const r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&typeof r==='object')S=Object.assign(blank(),r);}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+
+/* ---------- Calculs ---------- */
+const W={lu:.15,obj:.15,td:.30,quiz:.40};
+const exOf=i=>EX.map((e,k)=>[e,k]).filter(([e])=>e.ch===i);
+const objDone=i=>(S.obj[i]||[]).filter(Boolean).length;
+const tdDone=i=>exOf(i).filter(([,k])=>S.td[k]).length;
+const bestQ=i=>S.quiz[i]?S.quiz[i].best:0;
+const chScore=i=>Math.round(100*(W.lu*(S.lu[i]?1:0)+W.obj*objDone(i)/CH[i].obj.length+W.td*tdDone(i)/exOf(i).length+W.quiz*bestQ(i)));
+const overall=()=>Math.round(CH.reduce((s,_,i)=>s+chScore(i),0)/CH.length);
+function level(p){return p>=75?'Prêt pour l’examen':p>=50?'Solide':p>=25?'En progression':'Découverte';}
+function status(i){
+  if(chScore(i)>=80)return ['ok','Maîtrisé'];
+  if(S.lu[i]||objDone(i)||tdDone(i)||S.quiz[i])return ['mid','En cours'];
+  return ['todo','À commencer'];
+}
+function nextStep(){
+  const i=CH.map((_,i)=>i).sort((a,b)=>chScore(a)-chScore(b)||a-b)[0];
+  if(chScore(i)>=80)return 'Toutes les séances dépassent 80 %. Refaites les quiz les plus anciens pour consolider.';
+  const todo=!S.lu[i]?'lire le cours':!tdDone(i)?'faire les exercices de TD':!S.quiz[i]?'passer le quiz':'refaire le quiz';
+  return 'Prochaine étape conseillée : <strong>séance '+(i+1)+', '+CH[i].t+'</strong> ('+chScore(i)+' %). Commencez par '+todo+'.';
+}
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ---------- Markdown et formules ---------- */
+function md(src){
+  if(typeof marked==='undefined')return '<pre>'+esc(src)+'</pre>';
+  const m=[];
+  src=src.replace(/\$\$([\s\S]+?)\$\$/g,(_,t)=>{m.push(['d',t]);return 'MATHTOK'+(m.length-1)+'END';});
+  src=src.replace(/\$([^$\n]+?)\$/g,(_,t)=>{m.push(['i',t]);return 'MATHTOK'+(m.length-1)+'END';});
+  let h=marked.parse(src,{mangle:false,headerIds:false});
+  h=h.replace(/MATHTOK(\d+)END/g,(_,k)=>{const [ty,t]=m[k];return ty==='d'?'\\['+esc(t)+'\\]':'\\('+esc(t)+'\\)';});
+  return h.replace(/<table>/g,'<div class="scroll"><table>').replace(/<\/table>/g,'</table></div>');
+}
+function typeset(el){
+  if(window.MathJax&&MathJax.startup&&MathJax.startup.promise){
+    return MathJax.startup.promise.then(()=>MathJax.typesetPromise([el])).then(()=>true).catch(()=>false);
+  }
+  return Promise.resolve(false);
+}
+window.addEventListener('load',()=>{typeset(app);});
+
+/* ---------- Vues ---------- */
+const app=document.getElementById('app');
+function go(v){view=v;render();window.scrollTo(0,0);}
+
+function home(){
+  const p=overall();
+  const totObj=CH.reduce((s,c)=>s+c.obj.length,0), doneObj=CH.reduce((s,_,i)=>s+objDone(i),0);
+  const lus=CH.filter((_,i)=>S.lu[i]).length, td=Object.keys(S.td).filter(k=>S.td[k]).length;
+  return `
+  <header>
+    <div class="eyebrow">Master 1 Actuariat · Statistiques du risque</div>
+    <h1>Où en êtes-vous dans le cours ?</h1>
+  </header>
+  <section class="panel" aria-label="Niveau global">
+    <div class="hero">
+      <div><div class="big num">${p}<small> %</small></div><span class="level">${level(p)}</span></div>
+      <div>
+        <div class="gauge" role="progressbar" aria-valuenow="${p}" aria-valuemin="0" aria-valuemax="100" aria-label="Avancement global">
+          <i style="width:${p}%"></i><b style="left:25%"></b><b style="left:50%"></b><b style="left:75%"></b>
+        </div>
+        <div class="ticks"><span>Découverte</span><span>En progression</span><span>Solide</span><span>Examen</span></div>
+      </div>
+    </div>
+    <p class="next">${nextStep()}</p>
+  </section>
+  <section class="tiles" aria-label="Chiffres clés">
+    <div class="tile"><div class="v num">${lus}/${CH.length}</div><div class="l">cours lus</div></div>
+    <div class="tile"><div class="v num">${td}/${EX.length}</div><div class="l">exercices réussis</div></div>
+    <div class="tile"><div class="v num">${Object.keys(S.quiz).length}/${CH.length}</div><div class="l">quiz passés</div></div>
+    <div class="tile"><div class="v num">${doneObj}/${totObj}</div><div class="l">objectifs validés</div></div>
+  </section>
+  <section>
+    <h2 style="margin-bottom:10px">Les 12 séances</h2>
+    <ul class="list">${CH.map((c,i)=>{const [cl,lb]=status(i);const sc=chScore(i);return `
+      <li><button class="row" data-ch="${i}">
+        <span class="n">${String(i+1).padStart(2,'0')}</span>
+        <span class="t">${esc(c.t)}<span class="chip ${cl}">${lb}</span></span>
+        <span class="p">${sc} %</span>
+        <span class="bar"><i style="width:${sc}%"></i></span>
+      </button></li>`}).join('')}</ul>
+    <p class="method" style="margin-top:12px">Score d'une séance : 15 % cours lu, 15 % objectifs cochés, 30 % exercices de TD réussis, 40 % meilleur résultat au quiz. Le niveau global est la moyenne des 12 séances.</p>
+  </section>
+  <section>
+    <h2 style="margin-bottom:10px">Ressources du cours</h2>
+    <div class="actions" style="margin-top:0">
+      <button class="btn" data-doc="plan">Programme et plan</button>
+      <button class="btn" data-doc="eval">Modalités d'évaluation</button>
+      <button class="btn" data-doc="biblio">Pour aller plus loin</button>
+    </div>
+  </section>
+  <section class="panel">
+    <details>
+      <summary>Sauvegarde et remise à zéro</summary>
+      <p class="note" style="margin-top:10px">Votre progression est enregistrée dans ce navigateur. Pour la déplacer sur un autre appareil, copiez le code ci-dessous puis collez-le sur l'autre appareil.</p>
+      <textarea id="code" aria-label="Code de sauvegarde" spellcheck="false">${esc(mem)}</textarea>
+      <div class="actions">
+        <button class="btn" id="exp">Générer mon code</button>
+        <button class="btn" id="cp">Copier</button>
+        <button class="btn primary" id="imp">Importer ce code</button>
+        <button class="btn danger" id="rst">Tout effacer</button>
+      </div>
+      <p class="note" id="msg" role="status" style="margin-top:10px"></p>
+    </details>
+  </section>`;
+}
+
+function doc(key){
+  const T={plan:'Programme et plan',eval:'Modalités d’évaluation',biblio:'Pour aller plus loin'}[key];
+  return `<button class="btn back" id="back">← Retour au tableau de bord</button>
+  <header><div class="eyebrow">Ressources du cours</div><h1>${T}</h1></header>
+  <section class="panel lesson" id="docbody">${md(DOCS[key])}</section>`;
+}
+
+function tabBar(i,tab){
+  const T=[['cours','Cours'],['td','Exercices TD ('+tdDone(i)+'/'+exOf(i).length+')'],['quiz','Quiz'],['obj','Objectifs ('+objDone(i)+'/'+CH[i].obj.length+')']];
+  return `<div class="tabs" role="tablist">${T.map(([k,l])=>`<button role="tab" aria-selected="${k===tab}" class="tab" data-tab="${k}" id="tab-${k}">${l}</button>`).join('')}</div>`;
+}
+function chapter(i){
+  const tab=view.tab||'cours', c=CH[i], q=S.quiz[i], a=S.obj[i]||[];
+  let body='';
+  if(tab==='cours'){
+    body=`<section class="panel lesson" id="lesson">${lessonCache[i]||md(LESSONS[i])}</section>
+    <div class="actions"><button class="btn ${S.lu[i]?'':'primary'}" id="lu">${S.lu[i]?'✓ Cours lu (annuler)':'Marquer le cours comme lu'}</button>
+    <button class="btn" data-tab="td">Passer aux exercices</button></div>`;
+  }else if(tab==='td'){
+    body=exOf(i).map(([e,k],n)=>`
+    <section class="panel ex" data-k="${k}">
+      <div class="eyebrow">Exercice ${n+1}<span class="chip ok" id="done-${k}" ${S.td[k]?'':'hidden'}>Réussi</span></div>
+      <div class="md">${md(e.q)}</div>
+      <div class="answer">
+        <label for="a-${k}">Votre réponse${e.unit?' ('+esc(e.unit)+')':''}</label>
+        <input id="a-${k}" type="text" inputmode="decimal" autocomplete="off" placeholder="Valeur numérique">
+        <button class="btn primary chk">Vérifier</button>
+        <button class="btn solbtn">Voir la solution</button>
+      </div>
+      <p class="fb" id="fb-${k}" role="status"></p>
+      <div class="expl" id="sol-${k}" hidden>${md(e.sol)}</div>
+    </section>`).join('')+`<p class="method">Tolérance d'arrondi acceptée : 0,5 % à 2 % selon l'exercice. Les décimales s'écrivent avec une virgule ou un point.</p>`;
+  }else if(tab==='quiz'){
+    body=`<section class="panel">
+    <h2 style="margin-bottom:6px">Quiz de la séance</h2>
+    <p>${q?`Meilleur score : <strong class="num">${Math.round(q.best*c.q.length)}/${c.q.length}</strong> · dernier essai : <span class="num">${Math.round(q.last*c.q.length)}/${c.q.length}</span> · ${q.n} essai${q.n>1?'s':''}`:`Pas encore tenté. ${c.q.length} questions avec correction immédiate.`}</p>
+    <div class="actions"><button class="btn primary" id="start">${q?'Refaire le quiz':'Lancer le quiz'}</button></div></section>`;
+  }else{
+    body=`<section class="panel">
+    <h2 style="margin-bottom:6px">Ce que je sais faire</h2>
+    <p class="note" style="margin-bottom:6px">Cochez un objectif quand vous pourriez l'expliquer sans le cours.</p>
+    ${c.obj.map((o,k)=>`<label class="obj"><input type="checkbox" data-o="${k}" id="o-${i}-${k}" ${a[k]?'checked':''}><span>${esc(o)}</span></label>`).join('')}</section>`;
+  }
+  return `
+  <button class="btn back" id="back">← Retour au tableau de bord</button>
+  <header>
+    <div class="eyebrow">Séance ${i+1} sur ${CH.length} · score <span class="num" id="sc">${chScore(i)} %</span></div>
+    <h1>${esc(c.t)}</h1>
+  </header>
+  ${tabBar(i,tab)}
+  ${body}`;
+}
+
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function startQuiz(i){
+  run={i,k:0,ok:0,picked:null,opts:CH[i].q.map(q=>shuffle(q.o.map((t,j)=>({t,ok:j===0}))))};
+  go({name:'quiz'});
+}
+function quiz(){
+  const c=CH[run.i], q=c.q[run.k], opts=run.opts[run.k], done=run.picked!==null;
+  return `
+  <button class="btn back" id="back">← Quitter le quiz</button>
+  <section class="panel">
+    <div class="eyebrow">Séance ${run.i+1} · question ${run.k+1} sur ${c.q.length}</div>
+    <p class="q">${esc(q.q)}</p>
+    <div class="opts">${opts.map((o,j)=>{
+      let cl='';if(done){if(o.ok)cl='right';else if(j===run.picked)cl='wrong';}
+      return `<button class="opt ${cl}" data-p="${j}" ${done?'disabled':''}>${esc(o.t)}</button>`}).join('')}</div>
+    ${done?`<div class="expl" role="status"><strong>${opts[run.picked].ok?'Correct. ':'Pas tout à fait. '}</strong>${esc(q.e)}</div>
+    <div class="actions"><button class="btn primary" id="next">${run.k+1<c.q.length?'Question suivante':'Voir le résultat'}</button></div>`:''}
+  </section>`;
+}
+function result(){
+  const c=CH[run.i], n=c.q.length, f=run.ok/n, prev=S.quiz[run.i];
+  if(!run.saved){S.quiz[run.i]=prev?{best:Math.max(prev.best,f),last:f,n:prev.n+1}:{best:f,last:f,n:1};save();run.saved=true;}
+  const msg=f===1?'Parfait, séance maîtrisée.':f>=0.66?'Bien. Relisez les corrections des erreurs avant de passer à la suite.':'À retravailler : reprenez la section du cours puis refaites le quiz.';
+  return `
+  <section class="panel">
+    <div class="eyebrow">Séance ${run.i+1} · résultat</div>
+    <div class="score num">${run.ok}/${n}</div>
+    <p>${msg}</p>
+    <p class="note">Score de la séance : <span class="num">${chScore(run.i)} %</span> · niveau global : <span class="num">${overall()} %</span> (${level(overall())})</p>
+    <div class="actions">
+      <button class="btn primary" id="again">Refaire le quiz</button>
+      <button class="btn" id="tochap">Revenir à la séance</button>
+      <button class="btn" id="back">Tableau de bord</button>
+    </div>
+  </section>`;
+}
+
+/* ---------- Rendu et événements ---------- */
+function checkAns(e,val){
+  const v=parseFloat(String(val).replace(/\s/g,'').replace(',','.').replace(/[%€]/g,''));
+  if(isNaN(v))return null;
+  return Math.abs(v-e.ans)<=Math.abs(e.ans)*(e.tol||.02);
+}
+function refreshScore(){
+  const sc=app.querySelector('#sc');if(sc)sc.textContent=chScore(view.i)+' %';
+  const t=app.querySelector('#tab-td');if(t)t.textContent='Exercices TD ('+tdDone(view.i)+'/'+exOf(view.i).length+')';
+  const o=app.querySelector('#tab-obj');if(o)o.textContent='Objectifs ('+objDone(view.i)+'/'+CH[view.i].obj.length+')';
+}
+function render(){
+  app.innerHTML=view.name==='home'?home():view.name==='chapter'?chapter(view.i):view.name==='doc'?doc(view.key):view.name==='quiz'?(run.k>=CH[run.i].q.length?result():quiz()):'';
+  const $=s=>app.querySelector(s);
+  app.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>go({name:'chapter',i:+b.dataset.ch,tab:'cours'}));
+  app.querySelectorAll('[data-doc]').forEach(b=>b.onclick=()=>go({name:'doc',key:b.dataset.doc}));
+  if($('#back'))$('#back').onclick=()=>go(view.name==='quiz'&&run&&run.k<CH[run.i].q.length?{name:'chapter',i:run.i,tab:'quiz'}:{name:'home'});
+  if(view.name==='doc')typeset($('#docbody'));
+  if(view.name==='chapter')bindChapter();
+  if(view.name==='quiz'){
+    app.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{
+      run.picked=+b.dataset.p;if(run.opts[run.k][run.picked].ok)run.ok++;render();
+    });
+    if($('#next'))$('#next').onclick=()=>{run.k++;run.picked=null;render();};
+    if($('#again'))$('#again').onclick=()=>startQuiz(run.i);
+    if($('#tochap'))$('#tochap').onclick=()=>go({name:'chapter',i:run.i,tab:'quiz'});
+  }
+  if(view.name==='home')bindHome();
+}
+function bindChapter(){
+  const i=view.i, tab=view.tab||'cours', $=s=>app.querySelector(s);
+  app.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>go({name:'chapter',i,tab:b.dataset.tab}));
+  if(tab==='cours'){
+    const el=$('#lesson');
+    if(!lessonCache[i])typeset(el).then(ok=>{if(ok)lessonCache[i]=el.innerHTML;});
+    $('#lu').onclick=()=>{
+      S.lu[i]=!S.lu[i];save();refreshScore();
+      const b=$('#lu');b.textContent=S.lu[i]?'✓ Cours lu (annuler)':'Marquer le cours comme lu';b.classList.toggle('primary',!S.lu[i]);
+    };
+  }
+  if(tab==='td'){
+    typeset($('.ex')?$('.ex').parentNode:app);
+    app.querySelectorAll('.ex').forEach(box=>{
+      const k=+box.dataset.k, e=EX[k], inp=box.querySelector('input'), fb=box.querySelector('.fb');
+      const verify=()=>{
+        const r=checkAns(e,inp.value);
+        fb.className='fb';
+        if(r===null){fb.textContent='Entrez une valeur numérique.';return;}
+        if(r){
+          fb.textContent='Correct. Comparez avec la solution pour vérifier votre méthode.';fb.classList.add('good');
+          if(!S.td[k]){S.td[k]=true;save();box.querySelector('.chip').hidden=false;refreshScore();}
+        }else{
+          fb.textContent='Ce n’est pas la valeur attendue. Revérifiez vos calculs ou ouvrez la solution.';fb.classList.add('bad');
+        }
+      };
+      box.querySelector('.chk').onclick=verify;
+      inp.onkeydown=ev=>{if(ev.key==='Enter')verify();};
+      box.querySelector('.solbtn').onclick=ev=>{
+        const s=box.querySelector('.expl');s.hidden=!s.hidden;ev.target.textContent=s.hidden?'Voir la solution':'Masquer la solution';
+      };
+    });
+  }
+  if(tab==='quiz')$('#start').onclick=()=>startQuiz(i);
+  if(tab==='obj')app.querySelectorAll('[data-o]').forEach(cb=>cb.onchange=()=>{
+    S.obj[i]=S.obj[i]||CH[i].obj.map(()=>false);S.obj[i][+cb.dataset.o]=cb.checked;save();refreshScore();
+  });
+}
+function bindHome(){
+  const $=s=>app.querySelector(s), say=t=>{$('#msg').textContent=t;};
+  $('#exp').onclick=()=>{
+    try{mem=btoa(unescape(encodeURIComponent(JSON.stringify(S))));}catch(e){mem='';}
+    $('#code').value=mem;say('Code généré. Copiez-le pour le conserver.');
+  };
+  $('#cp').onclick=()=>{
+    const t=$('#code').value;if(!t){say('Générez d’abord un code.');return;}
+    const fb=()=>{$('#code').select();say('Copie automatique indisponible : le code est sélectionné, copiez-le à la main.');};
+    try{navigator.clipboard.writeText(t).then(()=>say('Code copié.'),fb);}catch(e){fb();}
+  };
+  $('#imp').onclick=()=>{
+    try{
+      const o=JSON.parse(decodeURIComponent(escape(atob($('#code').value.trim()))));
+      if(!o||typeof o!=='object'||!o.quiz)throw 0;
+      S=Object.assign(blank(),o);save();mem='';render();
+      app.querySelector('details').open=true;app.querySelector('#msg').textContent='Progression importée.';
+    }catch(e){say('Code invalide : collez le code complet généré sur l’autre appareil.');}
+  };
+  let armed=false;
+  $('#rst').onclick=()=>{
+    if(!armed){armed=true;$('#rst').textContent='Confirmer l’effacement';say('Cliquez de nouveau pour tout effacer. Cette action est définitive.');return;}
+    S=blank();save();mem='';render();
+  };
+}
+render();
+
+</script>
