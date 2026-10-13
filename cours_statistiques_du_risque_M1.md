@@ -211,7 +211,7 @@ $N\sim\text{Poisson}(100)$ sinistres par an, $X\sim\text{Exp}$ de moyenne 2 000 
 - $CV\approx14{,}1\ \%$
 
 **Approximation normale** du quantile à 99,5 % :
-$$200\,000+2{,}576\times28\,284\approx272\,900\ €.$$
+$$200\,000+2{,}576\times28\,284\approx272\,900\text{ €}.$$
 Le **besoin de capital** (au-dessus de la prime pure) est donc d'environ 72 900 €, soit 36 % de la charge moyenne.
 
 > **Piège** : l'approximation normale sous-estime les queues quand la distribution est asymétrique. Alternatives : **Gamma translatée**, **Normal-Power**, ou **calcul exact** (Panjer, FFT, simulation).
@@ -368,7 +368,7 @@ Simuler 1 000 couples avec la même corrélation (0,6) via copule gaussienne pui
 $$E[(X-d)_+]=\int_d^\infty\bar F(x)\,dx.$$
 
 **Exemple Pareto** ($\alpha=3$, $x_m=1\,000$, priorité $d=5\,000$) :
-$$E[(X-d)_+]=\frac{x_m^\alpha\,d^{1-\alpha}}{\alpha-1}=\frac{10^9\times5000^{-2}}{2}=20\ €.$$
+$$E[(X-d)_+]=\frac{x_m^\alpha\,d^{1-\alpha}}{\alpha-1}=\frac{10^9\times5000^{-2}}{2}=20\text{ €}.$$
 
 - Moyenne d'un sinistre : 1 500 € ; excès moyen par sinistre : 20 €.
 - Probabilité de toucher la couverture : $(1/5)^3=0{,}8\ \%$.
