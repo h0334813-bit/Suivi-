@@ -1,0 +1,342 @@
+<title>Suivi du cours Risque</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@600&display=swap">
+<style>
+/* Concept : un carnet de bord. Bandeau de niveau en haut, liste des 12 séances dessous, une vue détail par séance. */
+:root{
+  --bg:#f2f5f7; --surface:#ffffff; --ink:#13202b; --muted:#5b6b78; --line:#d8e0e6;
+  --accent:#0b6e6e; --accent-ink:#ffffff; --accent-soft:#dcefee;
+  --good:#1d7a46; --good-soft:#dff2e6; --warn:#a35f00; --warn-soft:#fbecd2; --bad:#b3372f; --bad-soft:#f9dedb;
+  --track:#e3e9ee;
+  --font-display:'IBM Plex Serif',Georgia,serif; --font-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif; --font-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1820; --surface:#16222d; --ink:#e6edf2; --muted:#93a4b1; --line:#2a3b49;
+  --accent:#4fc3bd; --accent-ink:#06201f; --accent-soft:#17383a;
+  --good:#5fd08b; --good-soft:#173a27; --warn:#f0b24d; --warn-soft:#3b2d12; --bad:#f08a82; --bad-soft:#40201d;
+  --track:#25343f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1820; --surface:#16222d; --ink:#e6edf2; --muted:#93a4b1; --line:#2a3b49;
+  --accent:#4fc3bd; --accent-ink:#06201f; --accent-soft:#17383a;
+  --good:#5fd08b; --good-soft:#173a27; --warn:#f0b24d; --warn-soft:#3b2d12; --bad:#f08a82; --bad-soft:#40201d;
+  --track:#25343f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.5;padding-inline:16px;padding-block:24px 48px}
+.wrap{max-width:860px;margin-inline:auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--font-display);font-weight:600;margin:0;text-wrap:balance;line-height:1.2}
+h1{font-size:1.7rem} h2{font-size:1.25rem} h3{font-size:1.05rem}
+.eyebrow{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px}
+.hero{display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:center}
+.big{font-size:3.6rem;line-height:1;font-weight:500}
+.big small{font-size:1.4rem;color:var(--muted)}
+.level{display:inline-block;margin-top:8px;padding:2px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:.85rem}
+.gauge{position:relative;height:12px;background:var(--track);border-radius:6px;margin-top:6px}
+.gauge>i{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:6px;transition:width .4s}
+.gauge>b{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--surface)}
+.ticks{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:6px;gap:4px}
+.next{margin-top:14px;font-size:.95rem;color:var(--muted)}
+.next strong{color:var(--ink)}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.tile .v{font-size:1.6rem;font-weight:500}
+.tile .l{font-size:.8rem;color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:8px;padding:0;margin:0;list-style:none}
+.row{width:100%;display:grid;grid-template-columns:2.2rem 1fr auto;gap:4px 14px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+.row:hover{border-color:var(--accent)}
+.row .n{grid-row:span 2;font-family:var(--font-mono);color:var(--muted);font-size:1.1rem}
+.row .t{font-weight:600;min-width:0}
+.row .p{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:.95rem;text-align:right}
+.bar{grid-column:2/4;height:6px;background:var(--track);border-radius:3px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.chip{font-size:.72rem;font-weight:600;padding:1px 8px;border-radius:999px;margin-left:8px;white-space:nowrap}
+.chip.todo{background:var(--track);color:var(--muted)}
+.chip.mid{background:var(--warn-soft);color:var(--warn)}
+.chip.ok{background:var(--good-soft);color:var(--good)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.back{align-self:flex-start}
+.obj{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+.obj:first-of-type{border-top:0}
+.obj input{width:20px;height:20px;margin-top:2px;accent-color:var(--accent);flex:none}
+.q{font-size:1.1rem;font-weight:500;margin:6px 0 14px;text-wrap:pretty}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:var(--good-soft);border-color:var(--good)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.opt:disabled{cursor:default;color:var(--ink)}
+.expl{margin-top:14px;padding:12px 14px;background:var(--accent-soft);border-radius:8px;font-size:.95rem}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.score{font-size:2.6rem;font-weight:500}
+details summary{cursor:pointer;font-weight:600}
+textarea{width:100%;min-height:90px;margin-top:10px;font-family:var(--font-mono);font-size:.78rem;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px}
+.note{font-size:.85rem;color:var(--muted)}
+.method{font-size:.85rem;color:var(--muted)}
+@media (max-width:560px){
+  .hero{grid-template-columns:1fr}
+  .tiles{grid-template-columns:1fr 1fr}
+  .tiles .tile:last-child{grid-column:span 2}
+  .big{font-size:3rem}
+}
+@media (prefers-reduced-motion:reduce){.gauge>i{transition:none}}
+</style>
+
+<div class="wrap" id="app"></div>
+
+<script>
+/* ---------- Contenu du cours ---------- */
+/* Chaque question : o[0] est la bonne réponse, l'ordre est mélangé à l'affichage. */
+const CH=[
+{t:"Risque et rappels de probabilités",obj:["Distinguer fréquence, sévérité et charge totale","Calculer espérance, variance, quantile et coefficient de variation","Expliquer l'effet de la mutualisation (division par √n)"],
+ q:[{q:"Un contrat a un écart-type de coût de 2 000 €. Pour 10 000 contrats indépendants, quel est l'écart-type du coût moyen par contrat ?",o:["20 €","200 €","2 000 €","0,2 €"],e:"σ/√n = 2000/100 = 20 €. La mutualisation réduit le risque relatif en 1/√n."},
+    {q:"Le coefficient de variation d'une charge de moyenne μ et d'écart-type σ vaut :",o:["σ/μ","μ/σ","σ²/μ","σ·μ"],e:"CV = σ/μ : c'est un risque relatif, comparable entre portefeuilles de tailles différentes."},
+    {q:"À quoi sert la fonction de survie 1 − F(x) ?",o:["À calculer la probabilité de dépasser un seuil","À calculer l'espérance directement","À estimer la variance","À mesurer la corrélation"],e:"P(X > x) est la quantité clé en réassurance et pour les queues de distribution."}]},
+{t:"Modélisation de la fréquence",obj:["Choisir entre Poisson, binomiale négative et binomiale avec le rapport Var/Moyenne","Expliquer la surdispersion par le mélange Poisson-Gamma","Ajuster une binomiale négative par la méthode des moments"],
+ q:[{q:"Un portefeuille a une moyenne de 0,25 sinistre et une variance de 0,40 par contrat. Quelle loi privilégier ?",o:["Binomiale négative","Poisson","Binomiale","Loi uniforme"],e:"Var > Moyenne : surdispersion, donc binomiale négative."},
+    {q:"Un mélange de lois de Poisson dont le paramètre λ suit une loi Gamma donne :",o:["Une binomiale négative","Une loi normale","Une binomiale","Une exponentielle"],e:"C'est le modèle Poisson-Gamma : il traduit l'hétérogénéité des assurés."},
+    {q:"Avec une fréquence moyenne de 0,166, que vaut P(N = 0) dans un modèle de Poisson ?",o:["≈ 0,847","≈ 0,166","≈ 0,920","≈ 0,500"],e:"P(N=0) = e^(−0,166) ≈ 0,847."}]},
+{t:"Modélisation de la sévérité",obj:["Citer les lois usuelles et la nature de leur queue","Distinguer queue légère et queue lourde","Traiter la troncature (franchise) et la censure (plafond)"],
+ q:[{q:"Pareto d'indice α = 3 et x_m = 1 000. Que vaut E[X] ?",o:["1 500","1 000","3 000","1 333"],e:"E[X] = α·x_m/(α−1) = 3·1000/2 = 1 500."},
+    {q:"Pour une Pareto d'indice α, la variance est finie si :",o:["α > 2","α > 1","α > 0","toujours"],e:"L'espérance existe pour α > 1, la variance pour α > 2."},
+    {q:"Les montants observés sont tronqués à gauche par une franchise d. L'ajustement doit porter sur :",o:["f(x)/(1 − F(d)) pour x > d","f(x) simplement","F(x)·f(x)","1 − F(x)"],e:"On ajuste la loi conditionnelle au fait que X > d."}]},
+{t:"Estimation et validation",obj:["Estimer par moments et par maximum de vraisemblance","Lire un QQ-plot et interpréter Kolmogorov-Smirnov et Anderson-Darling","Comparer des modèles avec AIC et BIC"],
+ q:[{q:"L'estimateur du maximum de vraisemblance de μ pour une log-normale est :",o:["La moyenne des ln(xᵢ)","Le logarithme de la moyenne des xᵢ","La médiane des xᵢ","La variance des xᵢ"],e:"μ̂ = (1/n)·Σ ln xᵢ, et σ̂² est la variance empirique des ln xᵢ."},
+    {q:"Entre deux modèles, lequel retenir selon l'AIC ?",o:["Celui qui a l'AIC le plus petit","Celui qui a l'AIC le plus grand","Celui qui a le plus de paramètres","Celui dont l'AIC est nul"],e:"AIC = 2k − 2 ln L : plus petit, mieux c'est, avec une pénalité sur le nombre de paramètres."},
+    {q:"Sur un QQ-plot, les points s'écartent de la droite en queue. Cela signale :",o:["Une mauvaise modélisation des extrêmes","Un échantillon trop grand","Une variance nulle","Rien de particulier"],e:"Une courbure en queue indique que la loi ajustée décrit mal les grandes valeurs."}]},
+{t:"Le modèle collectif",obj:["Appliquer E[S] et Var(S) du modèle collectif","Calculer un quantile par approximation normale","Connaître les limites de l'approximation normale"],
+ q:[{q:"N ~ Poisson(50) et E[X] = 800. Que vaut E[S] ?",o:["40 000","50 800","16 000","800"],e:"E[S] = E[N]·E[X] = 50 × 800 = 40 000."},
+    {q:"N ~ Poisson(50), E[X] = 800, σ(X) = 400. Que vaut Var(S) ?",o:["4·10⁷","8·10⁶","3,2·10⁷","2·10⁷"],e:"Poisson composé : Var(S) = λ·E[X²] = 50 × (800² + 400²) = 50 × 800 000 = 4·10⁷."},
+    {q:"L'approximation normale de S a tendance à :",o:["Sous-estimer les quantiles élevés quand la loi est asymétrique","Surestimer toujours le risque","Être exacte pour tout λ","Ignorer la moyenne"],e:"La queue réelle est plus lourde que la gaussienne : préférer Gamma translatée, Panjer, FFT ou simulation."}]},
+{t:"Algorithme de Panjer",obj:["Écrire la récurrence de Panjer pour une fréquence de Poisson","Dérouler à la main g₀, g₁, g₂","Citer les conditions d'application"],
+ q:[{q:"Poisson(λ = 2) et sévérité discrète sans masse en 0 (f₀ = 0). Que vaut g₀ = P(S = 0) ?",o:["e⁻² ≈ 0,135","2·e⁻² ≈ 0,271","0,5","e² ≈ 7,39"],e:"g₀ = exp(−λ(1 − f₀)) = e⁻²."},
+    {q:"Avec λ = 2, f₁ = 0,6 et g₀ = 0,1353, que vaut g₁ ?",o:["≈ 0,162","≈ 0,081","≈ 0,270","≈ 0,600"],e:"g₁ = λ·1·f₁·g₀ = 2 × 0,6 × 0,1353 ≈ 0,162."},
+    {q:"Quelles sont les conditions d'application de Panjer ?",o:["Sévérité discrète et fréquence de la classe (a, b, 0)","Sévérité continue quelconque","Fréquence quelconque","Sinistres dépendants"],e:"Poisson, binomiale et binomiale négative vérifient la récurrence P(N=k) = (a + b/k)·P(N=k−1)."}]},
+{t:"Mesures de risque : VaR et TVaR",obj:["Définir VaR et TVaR","Calculer VaR et TVaR d'une loi exponentielle","Énoncer les quatre axiomes de cohérence et le contre-exemple de la VaR"],
+ q:[{q:"X ~ Exp de moyenne 1 000. Que vaut la VaR à 99 % ?",o:["≈ 4 605","≈ 1 000","≈ 2 303","≈ 9 900"],e:"VaR = −θ·ln(1 − α) = 1000 × ln 100 ≈ 4 605."},
+    {q:"Pour la même loi, que vaut la TVaR à 99 % ?",o:["≈ 5 605","≈ 4 605","≈ 4 000","≈ 10 000"],e:"Pour l'exponentielle, TVaR = VaR + θ = 4 605 + 1 000."},
+    {q:"Laquelle de ces mesures n'est pas cohérente en général ?",o:["La VaR","La TVaR","L'Expected Shortfall","La TVaR à 99 %"],e:"La VaR n'est pas sous-additive : deux obligations à 4 % de défaut ont une VaR95 nulle chacune, mais la somme a une VaR95 de 100."}]},
+{t:"Valeurs extrêmes",obj:["Expliquer les deux approches : maxima par blocs et dépassements de seuil","Choisir un seuil (mean excess plot, stabilité de ξ)","Interpréter l'indice de queue ξ et l'estimateur de Hill"],
+ q:[{q:"Dans une GPD, ξ > 0 signifie :",o:["Une queue lourde de type Pareto","Une queue exponentielle","Un support borné","Aucune queue"],e:"ξ > 0 : queue lourde, avec un indice de Pareto α = 1/ξ."},
+    {q:"Choisir un seuil u trop bas provoque :",o:["Un biais (l'approximation GPD est mauvaise)","Trop peu de données","Une variance nulle","Rien"],e:"Compromis biais-variance : seuil bas, biais ; seuil haut, variance."},
+    {q:"Si ξ ≥ 1, la TVaR est :",o:["Infinie","Nulle","Égale à la VaR","Négative"],e:"La formule contient 1/(1 − ξ) : l'espérance de la queue diverge, le risque est non assurable sans plafond."}]},
+{t:"Dépendance et copules",obj:["Énoncer le théorème de Sklar","Comparer copules gaussienne, Student, Clayton et Gumbel","Relier le tau de Kendall au paramètre d'une copule"],
+ q:[{q:"Le théorème de Sklar dit que toute loi conjointe se décompose en :",o:["Marginales et copule","Moyenne et variance","Fréquence et sévérité","Corrélation seule"],e:"F(x₁..x_d) = C(F₁(x₁), …, F_d(x_d))."},
+    {q:"Quelle copule n'a aucune dépendance de queue ?",o:["La copule gaussienne","La copule de Student","La copule de Clayton","La copule de Gumbel"],e:"La gaussienne sous-estime les événements extrêmes joints, d'où les critiques après 2008."},
+    {q:"Pour une copule de Clayton, θ = 2τ/(1 − τ). Que vaut θ si τ = 0,5 ?",o:["2","1","0,5","4"],e:"θ = 2 × 0,5 / 0,5 = 2."}]},
+{t:"Réassurance",obj:["Distinguer quote-part, excédent de sinistre et stop-loss","Calculer la prime pure d'un excédent de sinistre sur une loi de Pareto","Justifier l'optimalité du stop-loss pour réduire la variance"],
+ q:[{q:"À coût moyen égal, quelle couverture minimise la variance de la rétention ?",o:["Le stop-loss","La quote-part","L'excédent de sinistre","Aucune couverture"],e:"Résultat de Vajda : le stop-loss est optimal pour la réduction de variance."},
+    {q:"Sinistres Pareto (α = 3, x_m = 1 000). Probabilité qu'un sinistre dépasse une priorité de 5 000 ?",o:["0,8 %","20 %","8 %","0,2 %"],e:"P(X > 5000) = (1000/5000)³ = 0,008."},
+    {q:"La prime pure d'un excédent de sinistre de priorité d est :",o:["∫ de d à ∞ de (1 − F(x)) dx","F(d)","E[X] − d","d·P(X > d)"],e:"E[(X − d)₊] = ∫_d^∞ (1 − F(x)) dx."}]},
+{t:"Tarification et crédibilité",obj:["Décomposer prime pure, chargement de sécurité et frais","Spécifier un GLM de fréquence et un GLM de sévérité","Calculer le facteur de crédibilité de Bühlmann"],
+ q:[{q:"Dans un modèle de Bühlmann, k = 4 et l'assuré est observé n = 8 ans. Que vaut Z ?",o:["2/3","1/3","1/2","8/4"],e:"Z = n/(n + k) = 8/12 = 2/3."},
+    {q:"Avec Z = 2/3, une moyenne individuelle de 50 et une moyenne collective de 40, la prime est :",o:["≈ 46,7","≈ 45","≈ 43,3","≈ 50"],e:"2/3 × 50 + 1/3 × 40 ≈ 46,7."},
+    {q:"Dans un GLM de Poisson pour la fréquence, l'offset est :",o:["ln(exposition)","L'exposition brute","La variance","Le nombre de sinistres"],e:"Avec le lien log, on ajoute ln(exposition) pour modéliser un taux par unité de risque."}]},
+{t:"Théorie de la ruine",obj:["Écrire le modèle de Cramér-Lundberg","Calculer ψ(u) pour des sinistres exponentiels","Utiliser l'inégalité de Lundberg pour dimensionner le capital"],
+ q:[{q:"Si le chargement de sécurité θ ≤ 0, la probabilité de ruine est :",o:["1","0","0,5","égale à e^(−Ru)"],e:"Sans profit net attendu, la ruine est certaine à horizon infini."},
+    {q:"Sinistres exponentiels de moyenne 1 000, θ = 20 %, u = 10 000. Que vaut ψ(u) ?",o:["≈ 15,7 %","≈ 18,9 %","≈ 1,6 %","≈ 8 %"],e:"ψ(u) = e^(−Ru)/(1 + θ) avec Ru = 1,667 : 0,189/1,2 ≈ 15,7 %. La borne de Lundberg seule donne 18,9 %."},
+    {q:"L'inégalité de Lundberg s'écrit :",o:["ψ(u) ≤ e^(−Ru)","ψ(u) ≥ e^(−Ru)","ψ(u) = Ru","ψ(u) ≤ R/u"],e:"R est le coefficient d'ajustement, solution de λ(M_X(R) − 1) = cR."}]}
+];
+
+/* ---------- État et stockage (navigateur du lecteur) ---------- */
+const KEY='suivi-risque-m1';
+let S={obj:{},quiz:{}};
+let view={name:'home'};
+let run=null;
+let mem='';
+try{const r=localStorage.getItem(KEY);if(r)S=JSON.parse(r);}catch(e){}
+S.obj=S.obj||{};S.quiz=S.quiz||{};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+
+/* ---------- Calculs ---------- */
+const objDone=i=>(S.obj[i]||[]).filter(Boolean).length;
+const bestQ=i=>S.quiz[i]?S.quiz[i].best:0;
+const chScore=i=>Math.round(100*(0.3*objDone(i)/CH[i].obj.length+0.7*bestQ(i)));
+const overall=()=>Math.round(CH.reduce((s,_,i)=>s+chScore(i),0)/CH.length);
+function level(p){return p>=75?'Prêt pour l’examen':p>=50?'Solide':p>=25?'En progression':'Découverte';}
+function status(i){
+  if(!S.quiz[i])return objDone(i)?['mid','Quiz à passer']:['todo','À commencer'];
+  return chScore(i)>=80?['ok','Maîtrisé']:['mid','À consolider'];
+}
+function nextStep(){
+  const idx=CH.map((_,i)=>i).sort((a,b)=>chScore(a)-chScore(b)||a-b);
+  const i=idx[0];
+  if(chScore(i)>=80)return 'Toutes les séances dépassent 80 %. Refaites les quiz les plus anciens pour consolider.';
+  return 'Prochaine étape conseillée : <strong>séance '+(i+1)+', '+CH[i].t+'</strong> ('+chScore(i)+' %).';
+}
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+/* ---------- Vues ---------- */
+const app=document.getElementById('app');
+function go(v){view=v;render();window.scrollTo(0,0);}
+
+function home(){
+  const p=overall();
+  const totObj=CH.reduce((s,c)=>s+c.obj.length,0), doneObj=CH.reduce((s,_,i)=>s+objDone(i),0);
+  const quizzes=Object.keys(S.quiz).length;
+  const avgQ=quizzes?Math.round(100*Object.values(S.quiz).reduce((s,q)=>s+q.best,0)/quizzes):0;
+  return `
+  <header>
+    <div class="eyebrow">Master 1 Actuariat · Statistiques du risque</div>
+    <h1>Où en êtes-vous dans le cours ?</h1>
+  </header>
+  <section class="panel" aria-label="Niveau global">
+    <div class="hero">
+      <div><div class="big num">${p}<small> %</small></div><span class="level">${level(p)}</span></div>
+      <div>
+        <div class="gauge" role="progressbar" aria-valuenow="${p}" aria-valuemin="0" aria-valuemax="100" aria-label="Avancement global">
+          <i style="width:${p}%"></i><b style="left:25%"></b><b style="left:50%"></b><b style="left:75%"></b>
+        </div>
+        <div class="ticks"><span>Découverte</span><span>En progression</span><span>Solide</span><span>Examen</span></div>
+      </div>
+    </div>
+    <p class="next">${nextStep()}</p>
+  </section>
+  <section class="tiles" aria-label="Chiffres clés">
+    <div class="tile"><div class="v num">${doneObj}/${totObj}</div><div class="l">objectifs validés</div></div>
+    <div class="tile"><div class="v num">${quizzes}/${CH.length}</div><div class="l">quiz passés</div></div>
+    <div class="tile"><div class="v num">${avgQ} %</div><div class="l">score moyen aux quiz</div></div>
+  </section>
+  <section>
+    <h2 style="margin-bottom:10px">Les 12 séances</h2>
+    <ul class="list">${CH.map((c,i)=>{const [cl,lb]=status(i);const sc=chScore(i);return `
+      <li><button class="row" data-ch="${i}">
+        <span class="n">${String(i+1).padStart(2,'0')}</span>
+        <span class="t">${esc(c.t)}<span class="chip ${cl}">${lb}</span></span>
+        <span class="p">${sc} %</span>
+        <span class="bar"><i style="width:${sc}%"></i></span>
+      </button></li>`}).join('')}</ul>
+    <p class="method" style="margin-top:12px">Calcul du score d'une séance : 30 % pour les objectifs cochés, 70 % pour votre meilleur résultat au quiz. Le niveau global est la moyenne des 12 séances.</p>
+  </section>
+  <section class="panel">
+    <details>
+      <summary>Sauvegarde et remise à zéro</summary>
+      <p class="note" style="margin-top:10px">Votre progression est enregistrée dans ce navigateur. Pour la déplacer sur un autre appareil, copiez le code ci-dessous puis collez-le sur l'autre appareil.</p>
+      <textarea id="code" aria-label="Code de sauvegarde" spellcheck="false">${esc(mem)}</textarea>
+      <div class="actions">
+        <button class="btn" id="exp">Générer mon code</button>
+        <button class="btn" id="cp">Copier</button>
+        <button class="btn primary" id="imp">Importer ce code</button>
+        <button class="btn danger" id="rst">Tout effacer</button>
+      </div>
+      <p class="note" id="msg" role="status" style="margin-top:10px"></p>
+    </details>
+  </section>`;
+}
+
+function chapter(i){
+  const c=CH[i], q=S.quiz[i], a=S.obj[i]||[];
+  return `
+  <button class="btn back" id="back">← Retour au tableau de bord</button>
+  <header>
+    <div class="eyebrow">Séance ${i+1} sur ${CH.length}</div>
+    <h1>${esc(c.t)}</h1>
+  </header>
+  <section class="panel">
+    <h2 style="margin-bottom:6px">Ce que je sais faire</h2>
+    <p class="note" style="margin-bottom:6px">Cochez un objectif quand vous pourriez l'expliquer sans le cours.</p>
+    ${c.obj.map((o,k)=>`<label class="obj"><input type="checkbox" data-o="${k}" id="o-${i}-${k}" ${a[k]?'checked':''}><span>${esc(o)}</span></label>`).join('')}
+  </section>
+  <section class="panel">
+    <h2 style="margin-bottom:6px">Quiz de la séance</h2>
+    <p>${q?`Meilleur score : <strong class="num">${Math.round(q.best*c.q.length)}/${c.q.length}</strong> · dernier essai : <span class="num">${Math.round(q.last*c.q.length)}/${c.q.length}</span> · ${q.n} essai${q.n>1?'s':''}`:`Pas encore tenté. ${c.q.length} questions avec correction immédiate.`}</p>
+    <div class="actions"><button class="btn primary" id="start">${q?'Refaire le quiz':'Lancer le quiz'}</button></div>
+  </section>
+  <p class="method">Score de la séance : <span class="num">${chScore(i)} %</span></p>`;
+}
+
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function startQuiz(i){
+  run={i,k:0,ok:0,picked:null,opts:CH[i].q.map(q=>shuffle(q.o.map((t,j)=>({t,ok:j===0}))))};
+  go({name:'quiz'});
+}
+function quiz(){
+  const c=CH[run.i], q=c.q[run.k], opts=run.opts[run.k], done=run.picked!==null;
+  return `
+  <button class="btn back" id="back">← Quitter le quiz</button>
+  <section class="panel">
+    <div class="eyebrow">Séance ${run.i+1} · question ${run.k+1} sur ${c.q.length}</div>
+    <p class="q">${esc(q.q)}</p>
+    <div class="opts">${opts.map((o,j)=>{
+      let cl='';if(done){if(o.ok)cl='right';else if(j===run.picked)cl='wrong';}
+      return `<button class="opt ${cl}" data-p="${j}" ${done?'disabled':''}>${esc(o.t)}</button>`}).join('')}</div>
+    ${done?`<div class="expl" role="status"><strong>${opts[run.picked].ok?'Correct. ':'Pas tout à fait. '}</strong>${esc(q.e)}</div>
+    <div class="actions"><button class="btn primary" id="next">${run.k+1<c.q.length?'Question suivante':'Voir le résultat'}</button></div>`:''}
+  </section>`;
+}
+function result(){
+  const c=CH[run.i], n=c.q.length, f=run.ok/n, prev=S.quiz[run.i];
+  const rec=prev?{best:Math.max(prev.best,f),last:f,n:prev.n+1}:{best:f,last:f,n:1};
+  if(!run.saved){S.quiz[run.i]=rec;save();run.saved=true;}
+  const msg=f===1?'Parfait, séance maîtrisée.':f>=0.66?'Bien. Relisez les corrections des erreurs avant de passer à la suite.':'À retravailler : reprenez la section du cours puis refaites le quiz.';
+  return `
+  <section class="panel">
+    <div class="eyebrow">Séance ${run.i+1} · résultat</div>
+    <div class="score num">${run.ok}/${n}</div>
+    <p>${msg}</p>
+    <p class="note">Score de la séance : <span class="num">${chScore(run.i)} %</span> · niveau global : <span class="num">${overall()} %</span> (${level(overall())})</p>
+    <div class="actions">
+      <button class="btn primary" id="again">Refaire le quiz</button>
+      <button class="btn" id="tochap">Revenir à la séance</button>
+      <button class="btn" id="back">Tableau de bord</button>
+    </div>
+  </section>`;
+}
+
+/* ---------- Rendu et événements ---------- */
+function render(){
+  app.innerHTML=view.name==='home'?home():view.name==='chapter'?chapter(view.i):view.name==='quiz'?(run.k>=CH[run.i].q.length?result():quiz()):'';
+  const $=s=>app.querySelector(s);
+  app.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>go({name:'chapter',i:+b.dataset.ch}));
+  if($('#back'))$('#back').onclick=()=>go(view.name==='quiz'&&run&&run.k<CH[run.i].q.length?{name:'chapter',i:run.i}:{name:'home'});
+  if(view.name==='chapter'){
+    app.querySelectorAll('[data-o]').forEach(cb=>cb.onchange=()=>{
+      const i=view.i;S.obj[i]=S.obj[i]||CH[i].obj.map(()=>false);S.obj[i][+cb.dataset.o]=cb.checked;save();
+      app.querySelector('.method .num').textContent=chScore(i)+' %';
+    });
+    $('#start').onclick=()=>startQuiz(view.i);
+  }
+  if(view.name==='quiz'){
+    app.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{
+      run.picked=+b.dataset.p;if(run.opts[run.k][run.picked].ok)run.ok++;render();
+    });
+    if($('#next'))$('#next').onclick=()=>{run.k++;run.picked=null;render();};
+    if($('#again'))$('#again').onclick=()=>startQuiz(run.i);
+    if($('#tochap'))$('#tochap').onclick=()=>go({name:'chapter',i:run.i});
+  }
+  if(view.name==='home')bindHome();
+}
+function bindHome(){
+  const $=s=>app.querySelector(s), say=t=>{$('#msg').textContent=t;};
+  const keep=()=>{mem=$('#code').value;};
+  $('#exp').onclick=()=>{
+    try{mem=btoa(unescape(encodeURIComponent(JSON.stringify(S))));}catch(e){mem='';}
+    $('#code').value=mem;say('Code généré. Copiez-le pour le conserver.');
+  };
+  $('#cp').onclick=()=>{
+    const t=$('#code').value;if(!t){say('Générez d’abord un code.');return;}
+    const fb=()=>{$('#code').select();say('Copie automatique indisponible : le code est sélectionné, copiez-le à la main.');};
+    try{navigator.clipboard.writeText(t).then(()=>say('Code copié.'),fb);}catch(e){fb();}
+  };
+  $('#imp').onclick=()=>{
+    keep();
+    try{
+      const o=JSON.parse(decodeURIComponent(escape(atob($('#code').value.trim()))));
+      if(!o||typeof o!=='object'||!o.obj||!o.quiz)throw 0;
+      S=o;save();mem='';render();
+      app.querySelector('details').open=true;app.querySelector('#msg').textContent='Progression importée.';
+    }catch(e){say('Code invalide : collez le code complet généré sur l’autre appareil.');}
+  };
+  let armed=false;
+  $('#rst').onclick=()=>{
+    if(!armed){armed=true;$('#rst').textContent='Confirmer l’effacement';say('Cliquez de nouveau pour tout effacer. Cette action est définitive.');return;}
+    S={obj:{},quiz:{}};save();mem='';render();
+  };
+}
+render();
+</script>
