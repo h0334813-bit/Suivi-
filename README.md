@@ -17,3 +17,15 @@ Ouvre simplement `index.html` dans un navigateur (aucune installation, aucune d�
 - Thème sombre/clair, couleur d'accent, export/import JSON. Raccourcis : `1`–`9` changent de vue, `n` crée une tâche.
 
 Les données de démonstration se remplacent via ⚙ Réglages → *Tout effacer* (ou modifie-les directement).
+
+---
+
+## 🔗 Labo des jointures (actuariat) — `jointures/`
+Application interactive pour comprendre les jointures sur un portefeuille individus / contrats / cotisations / prestations. Ouvre `jointures/index.html` (ou `/jointures/` sur GitHub Pages) : aucune installation.
+
+1. **Comprendre** : tables, clés, granularité, cardinalité (données avec orphelins volontaires).
+2. **Labo** : choisis tables, clés et type de jointure (INNER, LEFT, RIGHT, FULL, ANTI, SEMI, CROSS) ; lignes appariées/orphelines colorées, diagramme de Venn, code SQL / pandas / R / SAS.
+3. **Quel réflexe ?** : arbre de décision et objectifs → jointure.
+4. **Pièges & S/P** : fan-out (joindre puis sommer), ON vs WHERE, clés sales.
+5. **Entraînement** : « quelle jointure ? » et « combien de lignes ? » avec score.
+6. **Aide-mémoire**.
